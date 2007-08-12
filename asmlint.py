@@ -20,7 +20,7 @@
 # Helper functions
 # -----------------------------------------------------------------------------
 def print_token(t):
-	debug("%s: %s" % (t.type, t.value))
+	debug("%s=%s" % (t.type, t.value))
 	
 def warn(msg):
 	log('WARNING', msg)
@@ -160,15 +160,6 @@ def t_error(t):
 #    print "Illegal character '%s'" % t.value[0]
 #    t.lexer.skip(1)
     
-# Build the lexer
-import ply.lex as lex
-
-lexer = lex.lex()
-
-# initialize variables we'll need later
-lexer.seen_label = 0
-lexer.seen_opcode = 0
-
 # -----------------------------------------------------------------------------
 # Parsing rules
 # -----------------------------------------------------------------------------
@@ -260,49 +251,71 @@ def p_error(t):
     print "Syntax error at '%s'" % t.value
 
 # -----------------------------------------------------------------------------
-# Parser invocation
+# Main
 # -----------------------------------------------------------------------------
+
+def main():
+	global lexer
+	global yacc
+
+	# build the lexer
+	lexer = lex.lex()
+
+	# initialize variables we'll need later
+	lexer.seen_label = 0
+	lexer.seen_opcode = 0
+
+	# build the parser
+	yacc.yacc()
+
+	opt_parser = OptionParser(usage="%prog [OPTIONS] [FILENAME]")
+
+	opt_parser.add_option("--check-line-length", action="store_true", dest="check_line_length",
+		help="Check line length.")
+	opt_parser.add_option("--max-line-length", action="store", dest="max_line_length",
+		type="int", help="Maximum acceptable line length when --check-line-length is on.")
+
+	opt_parser.set_defaults(max_line_length=80)
+	opt_parser.set_defaults(check_line_length=False)
+
+	lineno = 0
+	filename = '<STDIN>'
+	file = sys.stdin
+
+	(opts, args) = opt_parser.parse_args()
+
+	if len(args) > 1:
+		opt_parser.print_help()
+		sys.exit(2)
+	elif len(args) > 0:
+		filename = args[0]
+		file = open(args[0], 'r')
+
+	while True:
+		lineno += 1
+		s = file.readline()
+		debug(">>> " + s)
+
+		if opts.check_line_length and len(s.rstrip('\n')) > opts.max_line_length:
+			warn("%s:%d exceeds %d chars." % (filename, lineno, opts.max_line_length))
+
+		if s == "":
+			break
+		yacc.parse(s)
+
+	if file != sys.stdin:
+		file.close()
+
+# -----------------------------------------------------------------------------
+# Entry point
+# -----------------------------------------------------------------------------
+
+import ply.lex as lex
+import ply.yacc as yacc
 
 import sys
 from optparse import OptionParser, OptionGroup
-import ply.yacc as yacc
-yacc.yacc()
 
-parser = OptionParser(usage="%prog [OPTIONS] [FILENAME]")
-
-parser.add_option("--check-line-length", action="store_true", dest="check_line_length",
-	help="Whether to check line length.")
-parser.add_option("--max-line-length", action="store", dest="max_line_length",
-	type="int", help="Maximum acceptable line length when --check-line-length is on.")
-
-parser.set_defaults(max_line_length=80)
-parser.set_defaults(check_line_length=False)
-
-lineno = 0
-filename = '<STDIN>'
-file = sys.stdin
-
-(opts, args) = parser.parse_args()
-
-if len(args) > 1:
-	parser.print_help()
-	sys.exit(2)
-elif len(args) > 0:
-	filename = args[0]
-	file = open(args[0], 'r')
-
-while True:
-	lineno += 1
-	s = file.readline()
-	debug(">>> " + s)
-
-	if opts.check_line_length and len(s.rstrip('\n')) > opts.max_line_length:
-		warn("%s:%d exceeds %d chars." % (filename, lineno, opts.max_line_length))
-
-	if s == "":
-		break
-	yacc.parse(s)
-
-if file != sys.stdin:
-	file.close()
+if __name__ == '__main__':
+	main()
 
