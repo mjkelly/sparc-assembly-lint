@@ -4,7 +4,8 @@
 # Copyright 2007 Michael Kelly (michael@michaelkelly.org)
 #
 # This program is released under the terms of the GNU General Public
-# License as published by the Free Software Foundation, version 2.
+# License as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
 #
 # Sat Aug 11 22:40:30 PDT 2007
 #
@@ -43,6 +44,7 @@ tokens = (
 	'NAME',
 	'REGISTER',
 	'INTEGER',
+	'FLOAT',
 	'STRING',
 	'CHARACTER',
 	'COMMA',
@@ -53,6 +55,13 @@ states = (
 	('INCOMMENT', 'exclusive'),
 )
 
+identifier_regex = r'\.?[a-zA-Z_][a-zA-Z0-9_]*'
+label_regex      = identifier_regex + r':'
+# TODO(mjk): allow hex, octal
+int_regex        = r'-?[0-9]+'
+float_regex      = r'-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
+string_regex     = r'"([^"\\]|(\\.))*"'
+char_regex       = r"'(([^'\\])|(\\.))'"
 
 def t_LINE_COMMENT(t):
 	r'\![^\n]*'
@@ -97,13 +106,12 @@ t_INCOMMENT_ignore = ""
 
 # this includes labels, opcodes, etc
 def t_LABEL(t):
-	r'\.?[a-zA-Z_][a-zA-Z0-9_]*:'
 	print_token(t)
 	lexer.seen_label = 1
 	return t
+t_LABEL.__doc__ = label_regex
 
 def t_nameoropcode(t):
-	r'\.?[a-zA-Z_][a-zA-Z0-9_]*'
 	if not t.lexer.seen_opcode:
 		t.lexer.seen_opcode = 1
 		t.type = 'OPCODE'
@@ -111,6 +119,7 @@ def t_nameoropcode(t):
 		t.type = 'NAME'
 	print_token(t)
 	return t
+t_nameoropcode.__doc__ = identifier_regex
 
 def t_REGISTER(t):
 	r'%([gilo][0-9]|fp|sp|hi|lo)'
@@ -119,23 +128,25 @@ def t_REGISTER(t):
 	print_token(t)
 	return t
 
-# TODO(mjk): replace with real definition (need hex, probably more)
 def t_INTEGER(t):
-	r'-?[0-9]+'
 	print_token(t)
 	return t
+t_INTEGER.__doc__ = int_regex
 
-# TODO(mjk): replace with real definition (need escapes)
+def t_FLOAT(t):
+	print_token(t)
+	return t
+t_FLOAT.__doc__ = float_regex
+
 def t_STRING(t):
-	r'"[^"]*"'
 	print_token(t)
 	return t
+t_STRING.__doc__ = string_regex
 
-# TODO(mjk): replace with real definition (need control-char escapes)
 def t_CHARACTER(t):
-	r"('[^']')"
 	print_token(t)
 	return t
+t_CHARACTER.__doc__ = char_regex
 
 # We probably need this later to do some error reporting. It will make all the
 # rules more complex...
@@ -155,10 +166,6 @@ def t_newline(t):
 def t_error(t):
 	print "Illegal character '%s'" % t.value[0]
 	t.lexer.skip(1)
-#    
-#def t_error(t):
-#    print "Illegal character '%s'" % t.value[0]
-#    t.lexer.skip(1)
     
 # -----------------------------------------------------------------------------
 # Parsing rules
@@ -184,6 +191,12 @@ def p_symbol(p):
 def p_integer_expr(p):
 	'''integer_expr : INTEGER'''
 	debug("integer_expr")
+	pass
+
+# TODO(mjk): expand to include non-trivial expressions
+def p_float_expr(p):
+	'''float_expr : FLOAT'''
+	debug("float_expr")
 	pass
 
 def p_register(p):
@@ -224,6 +237,7 @@ def p_opcode(p):
 
 def p_operand(p):
 	'''operand : integer_expr
+	           | float_expr
 	           | register
 		   | string
 		   | character
@@ -313,8 +327,8 @@ def main():
 import ply.lex as lex
 import ply.yacc as yacc
 
-import sys
 from optparse import OptionParser, OptionGroup
+import sys
 
 if __name__ == '__main__':
 	main()
