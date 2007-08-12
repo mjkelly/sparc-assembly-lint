@@ -62,6 +62,7 @@ int_regex        = r'-?[0-9]+'
 float_regex      = r'-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
 string_regex     = r'"([^"\\]|(\\.))*"'
 char_regex       = r"'(([^'\\])|(\\.))'"
+reg_regex        = r'%([gilo][0-9]|fp|sp|hi|lo)'
 
 def t_LINE_COMMENT(t):
 	r'\![^\n]*'
@@ -122,11 +123,11 @@ def t_nameoropcode(t):
 t_nameoropcode.__doc__ = identifier_regex
 
 def t_REGISTER(t):
-	r'%([gilo][0-9]|fp|sp|hi|lo)'
 	# strip off leading "%"
 	t.value = t.value[1:]
 	print_token(t)
 	return t
+t_REGISTER.__doc__ = reg_regex
 
 def t_INTEGER(t):
 	print_token(t)
