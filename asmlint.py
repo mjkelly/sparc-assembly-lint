@@ -51,6 +51,7 @@ tokens = (
 	'FLOAT',
 	'STRING',
 	'CHARACTER',
+	'ANNULLED',
 	'COMMA',
 )
 
@@ -116,15 +117,18 @@ def t_LABEL(t):
 	return t
 t_LABEL.__doc__ = label_regex
 
-def t_nameoropcode(t):
+def t_NAMEOROPCODE(t):
 	if not t.lexer.seen_opcode:
 		t.lexer.seen_opcode = 1
 		t.type = 'OPCODE'
 	else:
-		t.type = 'NAME'
+		if t.value == 'a':
+			t.type = 'ANNULLED'
+		else:
+			t.type = 'NAME'
 	print_token(t)
 	return t
-t_nameoropcode.__doc__ = identifier_regex
+t_NAMEOROPCODE.__doc__ = identifier_regex
 
 def t_REGISTER(t):
 	# strip off leading "%"
@@ -236,7 +240,8 @@ def p_name(p):
 	pass
 
 def p_opcode(p):
-	'''opcode : OPCODE'''
+	'''opcode : OPCODE
+	           | OPCODE COMMA ANNULLED'''
 	debug("opcode")
 	pass
 
@@ -317,7 +322,13 @@ def main():
 
 		if s == "":
 			break
-		yacc.parse(s)
+		try:
+			yacc.parse(s)
+		except Exception, e:
+			print 'Exception caught while parsing line %d!\n' % lineno
+			raise e
+
+			
 
 	if file != sys.stdin:
 		file.close()
