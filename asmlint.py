@@ -10,9 +10,13 @@
 # Sat Aug 11 22:40:30 PDT 2007
 #
 # Errors to catch:
-# - Suspicious save offsets
-# - No nop in delay slot
-# - Strange registers (including %lo)
+# - no save instruction
+# - no ret/restore
+# - suspicious save offsets
+# - no nop in delay slot
+# - strange registers (including %lo)
+# - mention broken gcc behavior on labels without leading .L?
+# - no label with same name as filename
 # - ...?
 #
 # -----------------------------------------------------------------------------
@@ -273,15 +277,12 @@ def main():
 	global lexer
 	global yacc
 
-	# build the lexer
+	# build lexer and parser
 	lexer = lex.lex()
+	yacc.yacc()
 
-	# initialize variables we'll need later
 	lexer.seen_label = 0
 	lexer.seen_opcode = 0
-
-	# build the parser
-	yacc.yacc()
 
 	opt_parser = OptionParser(usage="%prog [OPTIONS] [FILENAME]")
 
@@ -304,7 +305,7 @@ def main():
 		sys.exit(2)
 	elif len(args) > 0:
 		filename = args[0]
-		file = open(args[0], 'r')
+		file = open(filename, 'r')
 
 	while True:
 		lineno += 1
