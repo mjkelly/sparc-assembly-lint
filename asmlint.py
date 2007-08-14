@@ -62,7 +62,7 @@ states = (
 
 identifier_regex = r'\.?[a-zA-Z_][a-zA-Z0-9_]*'
 label_regex      = identifier_regex + r':'
-# TODO(mjk): allow hex, octal
+# TODO(mkelly): allow hex, octal
 int_regex        = r'-?[0-9]+'
 float_regex      = r'-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
 string_regex     = r'"([^"\\]|(\\.))*"'
@@ -196,13 +196,13 @@ def p_symbol(p):
 		  | command'''
 	pass
 
-# TODO(mjk): expand to include non-trivial expressions
+# TODO(mkelly): expand to include non-trivial expressions
 def p_integer_expr(p):
 	'''integer_expr : INTEGER'''
 	debug("integer_expr")
 	pass
 
-# TODO(mjk): expand to include non-trivial expressions
+# TODO(mkelly): expand to include non-trivial expressions
 def p_float_expr(p):
 	'''float_expr : FLOAT'''
 	debug("float_expr")
