@@ -205,20 +205,14 @@ def t_error(t):
 # Parsing rules
 # -----------------------------------------------------------------------------
 
-# top-level element
-def p_lines(p):
-	'''lines : lines line
- 	           | '''
-	debug_fname()
-	p[0] = plist(p)
-
 # NOTE: These are _not_ lines. They may be more than one line. I cannot think
 # of a good name.
 def p_line(p):
 	'''line : label
 	        | comment
 		| command
-		| varassign'''
+		| varassign
+		|'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -303,8 +297,10 @@ def p_command(p):
 	debug_fname()
 	p[0] = plist(p)
 
-def p_error(t):
-    print "Syntax error at '%s'" % t.value
+def p_error(p):
+    print "*** Syntax error at token", p, "***"
+    if p is not None:
+    	print "***\t type = %s, value = %s" % (str(p.type), str(p.value))
 
 # -----------------------------------------------------------------------------
 # Main
