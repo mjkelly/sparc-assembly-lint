@@ -205,6 +205,11 @@ def t_error(t):
 # Parsing rules
 # -----------------------------------------------------------------------------
 
+def p_lines(p):
+	'''lines : lines line
+	         |'''
+	pass
+
 # NOTE: These are _not_ lines. They may be more than one line. I cannot think
 # of a good name.
 def p_line(p):
