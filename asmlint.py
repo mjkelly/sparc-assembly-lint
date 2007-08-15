@@ -47,10 +47,9 @@ def debug_fname():
 
 def plist(p):
 	ret_list = [func_name(2)]
-	print "plist:"
 	for item in p[1:]:
-		print "\t" + str(item)
 		ret_list.append(item)
+	print "\t" + str(ret_list)
 	return ret_list
 
 # -----------------------------------------------------------------------------
