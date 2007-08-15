@@ -17,6 +17,9 @@
 # - strange registers (including %lo)
 # - mention broken gcc behavior on labels without leading .L?
 # - no label with same name as filename
+# - check alignment
+# - check for correct .section
+# - check for .global
 # - ...?
 #
 # -----------------------------------------------------------------------------
@@ -36,23 +39,38 @@ def debug(msg):
 def log(level, msg):
 	sys.stderr.write("%s: %s\n" % (level, msg))
 
+def func_name(level=2):
+	return sys._getframe(level).f_code.co_name
+
+def debug_fname():
+	debug(func_name())
+
+def plist(p):
+	ret_list = [func_name(2)]
+	print "plist:"
+	for item in p[1:]:
+		print "\t" + str(item)
+		ret_list.append(item)
+	return ret_list
+
 # -----------------------------------------------------------------------------
 # Tokens
 # -----------------------------------------------------------------------------
 
 tokens = (
+	'ANNULLED',
 	'BLOCK_COMMENT',
-	'LINE_COMMENT',
+	'CHARACTER',
+	'COMMA',
+	'EQUALS',
+	'FLOAT',
+	'IDENTIFIER',
+	'INTEGER',
 	'LABEL',
-	'OPCODE',
+	'LINE_COMMENT',
 	'NAME',
 	'REGISTER',
-	'INTEGER',
-	'FLOAT',
 	'STRING',
-	'CHARACTER',
-	'ANNULLED',
-	'COMMA',
 )
 
 # comments are the only multi-line things we have to deal with
@@ -71,7 +89,8 @@ reg_regex        = r'%([gilo][0-9]|fp|sp|hi|lo)'
 
 def t_LINE_COMMENT(t):
 	r'\![^\n]*'
-	print_token(t)
+	#print_token(t)
+	#debug("<block comment line>")
 	return t
 
 def t_COMMA(t):
@@ -98,6 +117,7 @@ def t_INCOMMENT_newline(t):
 	r'\n+'
 	t.lexer.block_comment_data += t.value
 	t.lexer.lineno += t.value.count("\n")
+	#debug("<newline>")
 
 def t_INCOMMENT_continue(t):
 	r'.'
@@ -117,10 +137,10 @@ def t_LABEL(t):
 	return t
 t_LABEL.__doc__ = label_regex
 
-def t_NAMEOROPCODE(t):
+def t_IDENTIFIER(t):
 	if not t.lexer.seen_opcode:
 		t.lexer.seen_opcode = 1
-		t.type = 'OPCODE'
+		t.type = 'IDENTIFIER'
 	else:
 		if t.value == 'a':
 			t.type = 'ANNULLED'
@@ -128,7 +148,7 @@ def t_NAMEOROPCODE(t):
 			t.type = 'NAME'
 	print_token(t)
 	return t
-t_NAMEOROPCODE.__doc__ = identifier_regex
+t_IDENTIFIER.__doc__ = identifier_regex
 
 def t_REGISTER(t):
 	# strip off leading "%"
@@ -157,6 +177,12 @@ def t_CHARACTER(t):
 	return t
 t_CHARACTER.__doc__ = char_regex
 
+# EQUALS needs to be below anything else that could contain an '='.
+def t_EQUALS(t):
+	r'='
+	print_token(t)
+	return t
+
 # We probably need this later to do some error reporting. It will make all the
 # rules more complex...
 #def t_WHITESPACE(t):
@@ -170,7 +196,7 @@ def t_newline(t):
 	t.lexer.lineno += t.value.count("\n")
 	t.lexer.seen_label = 0
 	t.lexer.seen_opcode = 0
-	debug("newline")
+	#debug("<newline>")
 
 def t_error(t):
 	print "Illegal character '%s'" % t.value[0]
@@ -180,70 +206,59 @@ def t_error(t):
 # Parsing rules
 # -----------------------------------------------------------------------------
 
-# dictionary of names
-names = { }
-
-# any number of symbols
-def p_symbols(p):
-	'''symbols : symbols symbol
+# top-level element
+def p_lines(p):
+	'''lines : lines line
  	           | '''
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
-# a single symbol
-def p_symbol(p):
-	'''symbol : label
-	          | comment
-		  | command'''
-	pass
+# NOTE: These are _not_ lines. They may be more than one line. I cannot think
+# of a good name.
+def p_line(p):
+	'''line : label
+	        | comment
+		| command
+		| varassign'''
+	debug_fname()
+	p[0] = plist(p)
 
 # TODO(mkelly): expand to include non-trivial expressions
 def p_integer_expr(p):
 	'''integer_expr : INTEGER'''
-	debug("integer_expr")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 # TODO(mkelly): expand to include non-trivial expressions
 def p_float_expr(p):
 	'''float_expr : FLOAT'''
-	debug("float_expr")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_register(p):
 	'''register : REGISTER'''
-	debug("register")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_string(p):
 	'''string : STRING'''
-	debug("string")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_character(p):
 	'''character : CHARACTER'''
-	debug("character")
-	pass
-
-def p_comment(p):
-	'''comment : BLOCK_COMMENT
-	           | LINE_COMMENT'''
-	debug("comment")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_label(p):
 	'''label : LABEL'''
-	debug("label")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_name(p):
 	'''name : NAME'''
-	debug("name")
-	pass
-
-def p_opcode(p):
-	'''opcode : OPCODE
-	           | OPCODE COMMA ANNULLED'''
-	debug("opcode")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_operand(p):
 	'''operand : integer_expr
@@ -252,24 +267,42 @@ def p_operand(p):
 		   | string
 		   | character
 		   | name'''
-	debug("operand")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_operand_list_nonempty(p):
 	'''operand_list_nonempty : operand
 	                         | operand COMMA operand_list_nonempty'''
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_operand_list(p):
 	'''operand_list : operand_list_nonempty
 	                | '''
-	debug("operand_list")
-	pass
+	debug_fname()
+	p[0] = plist(p)
+
+def p_comment(p):
+	'''comment : BLOCK_COMMENT
+	           | LINE_COMMENT'''
+	debug_fname()
+	p[0] = plist(p)
+
+def p_varassign(p):
+	'''varassign : IDENTIFIER EQUALS operand'''
+	debug_fname()
+	p[0] = plist(p)
+
+def p_opcode(p):
+	'''opcode : IDENTIFIER
+	           | IDENTIFIER COMMA ANNULLED'''
+	debug_fname()
+	p[0] = plist(p)
 
 def p_command(p):
 	'''command : opcode operand_list'''
-	debug("command")
-	pass
+	debug_fname()
+	p[0] = plist(p)
 
 def p_error(t):
     print "Syntax error at '%s'" % t.value
@@ -277,6 +310,9 @@ def p_error(t):
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
+
+lexer = None
+yacc = None
 
 def main():
 	global lexer
@@ -300,8 +336,8 @@ def main():
 	opt_parser.set_defaults(check_line_length=False)
 
 	lineno = 0
-	filename = '<STDIN>'
-	file = sys.stdin
+	input_filename = '<STDIN>'
+	input_file = sys.stdin
 
 	(opts, args) = opt_parser.parse_args()
 
@@ -309,16 +345,16 @@ def main():
 		opt_parser.print_help()
 		sys.exit(2)
 	elif len(args) > 0:
-		filename = args[0]
-		file = open(filename, 'r')
+		input_filename = args[0]
+		input_file = open(input_filename, 'r')
 
 	while True:
 		lineno += 1
-		s = file.readline()
-		debug(">>> " + s)
+		s = input_file.readline()
+		debug(">>> " + s.rstrip())
 
 		if opts.check_line_length and len(s.rstrip('\n')) > opts.max_line_length:
-			warn("%s:%d exceeds %d chars." % (filename, lineno, opts.max_line_length))
+			warn("%s:%d exceeds %d chars." % (input_filename, lineno, opts.max_line_length))
 
 		if s == "":
 			break
@@ -330,8 +366,8 @@ def main():
 
 			
 
-	if file != sys.stdin:
-		file.close()
+	if input_file != sys.stdin:
+		input_file.close()
 
 # -----------------------------------------------------------------------------
 # Entry point
