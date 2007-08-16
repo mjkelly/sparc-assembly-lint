@@ -10,7 +10,7 @@
 # Sun Aug 12 03:01:03 PDT 2007
 # -----------------------------------------------------------------
 
-import asmlint
+import asm_parser
 
 import re
 import unittest
@@ -35,30 +35,30 @@ class TestRegexes(unittest.TestCase):
 	def testInteger(self):
 		pos = ['1', '123', '0', '05', '-1']
 		neg = ['', 'foo', '1.0', '1.', '.5', '.']
-		self._regex_tester(asmlint.int_regex, pos, neg)
+		self._regex_tester(asm_parser.int_regex, pos, neg)
 
 	def testIdentifier(self):
 		pos = ['foo', 'foo_bar', 'FOO', 'foo_123', '.foo', '.f1o2o3']
 		neg = ['', '1foo', 'foo.bar', '', 'foo.', '.']
-		self._regex_tester(asmlint.identifier_regex, pos, neg)
+		self._regex_tester(asm_parser.identifier_regex, pos, neg)
 
 	def testString(self):
 		pos = [r'""', r'" "', r'"foo"', r'"foo\'bar"', r'"\n"',
 			r'"foo\r\nbar"', r'"\""', r'"foo\"bar"', r'"foo\\\"bar"', r'"\\"', r'"\\\""']
 		neg = [r'"', r'"\'', r'"\"', r'"\\\"']
-		self._regex_tester(asmlint.string_regex, pos, neg)
+		self._regex_tester(asm_parser.string_regex, pos, neg)
 
 	def testChar(self):
 		pos = [r"'c'", r"' '", r"'\n'", r"'\''", r"'\\'", "'\"'"]
 		neg = [r"''", r"'\'"]
-		self._regex_tester(asmlint.char_regex, pos, neg)
+		self._regex_tester(asm_parser.char_regex, pos, neg)
 	
 	def testFloatingPoint(self):
 		pos = ['1', '1.', '1.5', '42.14159', '.5', '-.5', '0.5',
 			'01.5', '1.5E4', '1e5', '0', '-0', '-1.5', '-1.5e3',
 			'-1.5e-3']
 		neg = ['', 'foo', '.', 'e5', '1..5', '--5', '-5e--5']
-		self._regex_tester(asmlint.float_regex, pos, neg)
+		self._regex_tester(asm_parser.float_regex, pos, neg)
 			
 if __name__ == '__main__':
 	unittest.main()

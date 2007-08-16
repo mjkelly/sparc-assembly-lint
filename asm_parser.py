@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -----------------------------------------------------------------------------
-# asmlint.py -- lint for SPARC assembly
+# asm_parser.py -- Parse SPARC assembly files.
 # Copyright 2007 Michael Kelly (michael@michaelkelly.org)
 #
 # This program is released under the terms of the GNU General Public
@@ -8,20 +8,6 @@
 # of the License, or (at your option) any later version.
 #
 # Sat Aug 11 22:40:30 PDT 2007
-#
-# Errors to catch:
-# - no save instruction
-# - no ret/restore
-# - suspicious save offsets
-# - no nop in delay slot
-# - strange registers (including %lo)
-# - mention broken gcc behavior on labels without leading .L?
-# - no label with same name as filename
-# - check alignment
-# - check for correct .section
-# - check for .global
-# - ...?
-#
 # -----------------------------------------------------------------------------
 
 from optparse import OptionParser, OptionGroup

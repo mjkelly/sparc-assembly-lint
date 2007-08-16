@@ -1,0 +1,11 @@
+Errors to catch:
+- no save instruction
+- no ret/restore
+- suspicious save offsets
+- no nop in delay slot
+- strange registers (including %lo)
+- mention broken gcc behavior on labels without leading .L?
+- no label with same name as filename
+- check alignment
+- check for correct .section
+- check for .global

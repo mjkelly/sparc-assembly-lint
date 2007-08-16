@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -----------------------------------------------------------------
-# lint.py -- $desc$
+# asmlint.py -- Find common errors in SPARC assembly files.
 # Copyright 2007 Michael Kelly (michael@michaelkelly.org)
 #
 # This program is released under the terms of the GNU General Public
