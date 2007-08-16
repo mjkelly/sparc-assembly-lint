@@ -49,7 +49,9 @@ def plist(p):
 	ret_list = [func_name(2)]
 	for item in p[1:]:
 		ret_list.append(item)
-	print "\t" + str(ret_list)
+	#print "\t" + str(ret_list)
+	pp = pprint.PrettyPrinter(indent=2)
+	pp.pprint(ret_list)
 	return ret_list
 
 # -----------------------------------------------------------------------------
@@ -87,8 +89,8 @@ char_regex       = r"'(([^'\\])|(\\.))'"
 reg_regex        = r'%([gilo][0-9]|fp|sp|hi|lo)'
 
 def t_LINE_COMMENT(t):
-	r'\![^\n]*'
-	#print_token(t)
+	r'![^\n]*'
+	print_token(t)
 	#debug("<block comment line>")
 	return t
 
@@ -101,6 +103,7 @@ def t_begincomment(t):
 	r'/\*'
 	t.lexer.block_comment_data = t.value
 	t.lexer.begin('INCOMMENT')
+	pass
 
 # endcomment needs to be first to take precedence over continue
 def t_INCOMMENT_endcomment(t):
@@ -205,11 +208,6 @@ def t_error(t):
 # Parsing rules
 # -----------------------------------------------------------------------------
 
-def p_lines(p):
-	'''lines : lines line
-	         |'''
-	pass
-
 # NOTE: These are _not_ lines. They may be more than one line. I cannot think
 # of a good name.
 def p_line(p):
@@ -217,6 +215,7 @@ def p_line(p):
 	        | comment
 		| command
 		| varassign
+		| line line
 		|'''
 	debug_fname()
 	p[0] = plist(p)
@@ -268,17 +267,24 @@ def p_operand(p):
 	debug_fname()
 	p[0] = plist(p)
 
-def p_operand_list_nonempty(p):
-	'''operand_list_nonempty : operand
-	                         | operand COMMA operand_list_nonempty'''
+#def p_operand_list_nonempty(p):
+#	'''operand_list_nonempty : operand
+#	                         | operand COMMA operand_list_nonempty'''
+#	debug_fname()
+#	p[0] = plist(p)
+
+#def p_operand_list(p):
+#	'''operand_list : operand_list_nonempty
+#	                | '''
+#	debug_fname()
+#	p[0] = plist(p)
+
+def p_operand_list(p):
+	'''operand_list : operand_list COMMA operand_list
+	                | operand'''
 	debug_fname()
 	p[0] = plist(p)
 
-def p_operand_list(p):
-	'''operand_list : operand_list_nonempty
-	                | '''
-	debug_fname()
-	p[0] = plist(p)
 
 def p_comment(p):
 	'''comment : BLOCK_COMMENT
@@ -293,12 +299,13 @@ def p_varassign(p):
 
 def p_opcode(p):
 	'''opcode : IDENTIFIER
-	           | IDENTIFIER COMMA ANNULLED'''
+	          | IDENTIFIER COMMA ANNULLED'''
 	debug_fname()
 	p[0] = plist(p)
 
 def p_command(p):
-	'''command : opcode operand_list'''
+	'''command : opcode operand_list
+	           | opcode'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -378,6 +385,7 @@ import ply.yacc as yacc
 
 from optparse import OptionParser, OptionGroup
 import sys
+import pprint
 
 if __name__ == '__main__':
 	main()
