@@ -27,6 +27,7 @@ if __name__ == '__main__':
 
 	(opts, args) = opt_parser.parse_args()
 
+	TestRegexes.verbosity = opts.verbosity
 	suite = unittest.TestLoader().loadTestsFromTestCase(TestRegexes)
 	unittest.TextTestRunner(verbosity=2).run(suite)
 

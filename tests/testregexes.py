@@ -17,19 +17,25 @@ import unittest
 
 class TestRegexes(unittest.TestCase):
 	"""Test the non-trivial regexes"""
+	# If run from testrunner.py, this is overridden with testrunner's
+	# value. (testrunner ALWAYS sets it.)
+	verbosity = -1
 
 	def _regex_tester(self, regex, matches, nonmatches):
 		"""Test a given regex against a series of positive matches and
 		non-matches."""
-		print "\nRegex tester:"
+		if TestRegexes.verbosity >= 0:
+			print "\nRegex tester:"
 		r = re.compile('^' + regex + '$')
 
 		for good in matches:
-			print '\tTesting POSITIVE match: %s' % good
+			if TestRegexes.verbosity >= 0:
+				print '\tTesting POSITIVE match: %s' % good
 			self.assert_(r.match(good))
 
 		for bad in nonmatches:
-			print '\tTesting NEGATIVE match: %s' % bad
+			if TestRegexes.verbosity >= 0:
+				print '\tTesting NEGATIVE match: %s' % bad
 			self.assert_(not r.match(bad))
 	
 	def testInteger(self):
