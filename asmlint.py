@@ -14,9 +14,32 @@ from optparse import OptionParser, OptionGroup
 import sys
 import pprint
 
-from asm_parser import yacc, debug, warn, get_num_errors
+from asm_parser import yacc, debug, warn, get_num_errors, init_parser
 
 parse_tree = []
+
+# Run the linter on a file handle.
+# @return the number of errors that occurred in the parse
+def run(handle, check_line_length, max_line_length):
+	init_parser()
+	lineno = 0
+	while True:
+		lineno += 1
+		s = handle.readline()
+		debug(">>> " + s.rstrip())
+
+		if check_line_length and len(s.rstrip('\n')) > max_line_length:
+			warn("%s:%d exceeds %d chars." % (handle.name, lineno, max_line_length))
+
+		if s == "":
+			break
+		try:
+			parse_tree.append(str(yacc.parse(s)))
+		except Exception, e:
+			print 'Exception caught while parsing line %d!\n' % lineno
+			raise e
+
+	return get_num_errors()
 
 def main(argv):
 
@@ -30,8 +53,6 @@ def main(argv):
 	opt_parser.set_defaults(max_line_length=80)
 	opt_parser.set_defaults(check_line_length=False)
 
-	lineno = 0
-	input_filename = '<STDIN>'
 	input_file = sys.stdin
 
 	(opts, args) = opt_parser.parse_args()
@@ -42,32 +63,16 @@ def main(argv):
 	elif len(args) > 0:
 		input_filename = args[0]
 		input_file = open(input_filename, 'r')
-
-	while True:
-		lineno += 1
-		s = input_file.readline()
-		debug(">>> " + s.rstrip())
-
-		if opts.check_line_length and len(s.rstrip('\n')) > opts.max_line_length:
-			warn("%s:%d exceeds %d chars." % (input_filename, lineno, opts.max_line_length))
-
-		if s == "":
-			break
-		try:
-			parse_tree.append(str(yacc.parse(s)))
-		except Exception, e:
-			print 'Exception caught while parsing line %d!\n' % lineno
-			raise e
-
-			
+	
+	num_errors = run(input_file, opts.check_line_length, opts.max_line_length)
 
 	if input_file != sys.stdin:
 		input_file.close()
 
 	print "-----------------------------------------------------------------------------"
-	print "%d errors." % get_num_errors()
-	
-	if get_num_errors() == 0:
+	print "%d errors." % num_errors
+
+	if num_errors == 0:
 		return 0
 	else:
 		return 1

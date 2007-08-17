@@ -17,8 +17,6 @@ import pprint
 import ply.lex as lex
 import ply.yacc as yacc
 
-lex_errors = 0
-yacc_errors = 0
 
 # -----------------------------------------------------------------------------
 # Helper functions
@@ -314,14 +312,18 @@ def p_error(p):
 	yacc_error()
 	
 
-# -----------------------------------------------------------------------------
-# Main
-# -----------------------------------------------------------------------------
+def init_parser():
+	# build lexer and parser
+	global lex_errors
+	global yacc_errors 
+	global lexer
+	global yacc
+	lexer = lex.lex()
+	yacc.yacc()
 
-# build lexer and parser
-lexer = lex.lex()
-yacc.yacc()
-
-lexer.seen_label = 0
-lexer.seen_opcode = 0
+	# init globals
+	lexer.seen_label = 0
+	lexer.seen_opcode = 0
+	lex_errors = 0
+	yacc_errors = 0
 

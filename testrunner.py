@@ -13,7 +13,11 @@
 import unittest
 
 from tests.testregexes import TestRegexes
+from tests.testlines import TestSingleLines
 
 if __name__ == '__main__':
 	suite = unittest.TestLoader().loadTestsFromTestCase(TestRegexes)
+	unittest.TextTestRunner(verbosity=2).run(suite)
+
+	suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleLines)
 	unittest.TextTestRunner(verbosity=2).run(suite)
