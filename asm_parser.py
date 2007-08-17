@@ -23,40 +23,62 @@ import ply.yacc as yacc
 # -----------------------------------------------------------------------------
 def print_token(t):
 	debug("%s=%s" % (t.type, t.value))
+
+def error(msg):
+	if verbosity >= 0:
+		log('ERROR', msg)
 	
 def warn(msg):
-	log('WARNING', msg)
+	if verbosity >= 0:
+		log('WARNING', msg)
 
 def debug(msg):
-	log('DEBUG', msg)
+	if verbosity >= 1:
+		log('DEBUG', msg)
 
-def log(level, msg):
-	sys.stderr.write("%s: %s\n" % (level, msg))
+def info(msg):
+	if verbosity >= 0:
+		print msg
+
+def log(label, msg):
+	'''Print the given message, prefixed with the given label (DEBUG,
+	WARNING, etc) to stderr.'''
+	sys.stderr.write("%s: %s\n" % (label, msg))
 
 def func_name(level=2):
+	'''Get the name of a function on the call stack.
+		@param level 1 = func_name's calling function, 2 caller's
+		caller, etc.'''
 	return sys._getframe(level).f_code.co_name
 
 def debug_fname():
+	'''Print the name of the calling function as debug output.'''
 	debug(func_name())
 
 def plist(p):
+	'''Make a list from the calling function (assumed to the the left side
+	of a production) and the given production list.
+		@param p list of entities on the right side of a production.'''
 	ret_list = [func_name(2)]
 	for item in p[1:]:
 		ret_list.append(item)
-	#print "\t" + str(ret_list)
 	pp = pprint.PrettyPrinter(indent=2)
-	pp.pprint(ret_list)
+	if verbosity >= 2:
+		pp.pprint(ret_list)
 	return ret_list
 
 def lex_error():
+	'''Register a lex error.'''
 	global lex_errors
 	lex_errors += 1
 
 def yacc_error():
+	'''Register a yacc error.'''
 	global yacc_errors
 	yacc_errors += 1
 
 def get_num_errors():
+	'''Get the number of lex errors + yacc errors.'''
 	return lex_errors + yacc_errors
 
 # -----------------------------------------------------------------------------
@@ -132,7 +154,7 @@ def t_INCOMMENT_continue(t):
 	pass
 
 def t_INCOMMENT_error(t):
-	print "Illegal character '%s'" % t.value[0]
+	error("Illegal character '%s'" % t.value[0])
 	t.lexer.skip(1)
 	lex_error()
 
@@ -207,7 +229,7 @@ def t_newline(t):
 	#debug("<newline>")
 
 def t_error(t):
-	print "Illegal character '%s'" % t.value[0]
+	error("Illegal character '%s'" % t.value[0])
 	t.lexer.skip(1)
 	lex_error()
 
@@ -306,18 +328,22 @@ def p_command(p):
 	p[0] = plist(p)
 
 def p_error(p):
-	print "*** Syntax error at token", p, "***"
+	error("Syntax error at token %s" % str(p))
 	if p is not None:
-		print "***\t type = %s, value = %s ***" % (str(p.type), str(p.value))
+		error("\t(type = %s, value = %s)" % (str(p.type), str(p.value)))
 	yacc_error()
 	
 
-def init_parser():
+def init_parser(verbosity_level):
+	'''Initialize lex and yacc. You can call asm_lint.yacc.parse() after you call this.
+		@param verbosity_level Output verbosity: 0, 1, 2 (higher is more).
+	'''
 	# build lexer and parser
 	global lex_errors
 	global yacc_errors 
 	global lexer
 	global yacc
+	global verbosity
 	lexer = lex.lex()
 	yacc.yacc()
 
@@ -326,4 +352,4 @@ def init_parser():
 	lexer.seen_opcode = 0
 	lex_errors = 0
 	yacc_errors = 0
-
+	verbosity = verbosity_level

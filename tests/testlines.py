@@ -31,13 +31,17 @@ class BogusFile:
 		return ret
 
 class TestSingleLines(unittest.TestCase):
+	# If run from testrunner.py, this is overridden with testrunner's
+	# value. (testrunner ALWAYS sets it.)
+	verbosity = -1
+
 	# Run the linter on a single line.
 	# @return number of errors found
 	def _runParserOneLine(self, line):
 		lines = []
 		lines.append(line)
 		try:
-			num_errors = asmlint.run(BogusFile(lines), None, None)
+			num_errors = asmlint.run(BogusFile(lines), None, None, TestSingleLines.verbosity)
 		except Exception,e:
 			self.assert_(False)
 		return num_errors
