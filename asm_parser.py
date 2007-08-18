@@ -109,7 +109,7 @@ states = (
 identifier_regex = r'\.?[a-zA-Z_][a-zA-Z0-9_]*'
 label_regex      = identifier_regex + r':'
 # TODO(mkelly): allow hex, octal
-int_regex        = r'-?[0-9]+'
+int_regex        = r'-?(0x)?[0-9]+'
 float_regex      = r'-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
 string_regex     = r'"([^"\\]|(\\.))*"'
 char_regex       = r"'(([^'\\])|(\\.))'"

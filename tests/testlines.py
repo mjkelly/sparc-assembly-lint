@@ -76,17 +76,17 @@ class TestSingleLines(unittest.TestCase):
 	def testVarAssignment(self):
 		self._runGood('MYINT=10')
 	
-#	def testVarAssignmentToHex(self):
-#		self._runGood('A=0x41')
-#
+	def testVarAssignmentToHex(self):
+		self._runGood('A=0x41')
+
 #	def testTwoRegisterLoad(self):
 #		self._runGood('ld      [%i0 + %o0], %l0')
 #	
 #	def testComplexCompare(self):
 #		self._runGood('cmp     %l5, NUM_OF_BANKS*4')
-#	
-#	def testSetHex(self):
-#		self._runGood('set     0x80000000, %l3')
+	
+	def testSetHex(self):
+		self._runGood('set     0x80000000, %l3')
 
 	def testInvalid1(self):
 		self._runBad('# foo')
