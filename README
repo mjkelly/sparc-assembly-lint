@@ -9,3 +9,6 @@ Errors to catch:
 - check alignment
 - check for correct .section
 - check for .global
+- set (or other multi-instruction pseudo-ops) in delay slot
+- branch in delay slot (works, but undefined)
+- label in delay slot? (valid, but in how many cases is it intended?)
