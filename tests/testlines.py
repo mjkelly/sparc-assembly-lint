@@ -68,7 +68,7 @@ class TestSingleLines(unittest.TestCase):
 		self._runGood('add     %g0, 10, %l0')
 	
 	def testCommand_AndComment(self):
-		self._runGood('.global main ! comment')
+		self._runGood('mov	%g0, %l0! comment')
 	
 	def testLineComment(self):
 		self._runGood('! line comment')

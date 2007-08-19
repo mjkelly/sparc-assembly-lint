@@ -90,15 +90,20 @@ tokens = (
 	'BLOCK_COMMENT',
 	'CHARACTER',
 	'COMMA',
+	'SEMICOLON',
 	'EQUALS',
-	'FLOAT',
 	'IDENTIFIER',
 	'INTEGER',
 	'LABEL',
 	'LINE_COMMENT',
-	'NAME',
 	'REGISTER',
 	'STRING',
+	'MOV',
+	'SET',
+	'CALL',
+	'FORMAT3_OPCODE',
+	'SYNTHETIC_ZERO_ARG_OPCODE',
+	'CLEAR_MEM_OPCODE'
 )
 
 # comments are the only multi-line things we have to deal with
@@ -106,9 +111,57 @@ states = (
 	('INCOMMENT', 'exclusive'),
 )
 
+reserved = {
+	# specials
+	'call' : 'CALL',
+
+	# Synthetic (no args)
+	'ret'		:	'SYNTHETIC_ZERO_ARG_OPCODE',
+	'retl'		:	'SYNTHETIC_ZERO_ARG_OPCODE',
+	'nop'		:	'SYNTHETIC_ZERO_ARG_OPCODE',
+
+	'clr'		:	'CLEAR_MEM_OPCODE',
+	'clrb'		:	'CLEAR_MEM_OPCODE',
+	'clrh'		:	'CLEAR_MEM_OPCODE',
+
+	'mov'		:	'MOV',
+	'set'		:	'SET',
+
+	# format3 opcodes
+	'add'           :       'FORMAT3_OPCODE',
+	'addcc'         :       'FORMAT3_OPCODE',
+	'addx'          :       'FORMAT3_OPCODE',
+	'addxcc'        :       'FORMAT3_OPCODE',
+	'and'           :       'FORMAT3_OPCODE',
+	'restore'       :       'FORMAT3_OPCODE',
+	'save'          :       'FORMAT3_OPCODE',
+	'sdiv'          :       'FORMAT3_OPCODE',
+	'sdivcc'        :       'FORMAT3_OPCODE',
+	'sll'           :       'FORMAT3_OPCODE',
+	'smul'          :       'FORMAT3_OPCODE',
+	'smulcc'        :       'FORMAT3_OPCODE',
+	'sra'           :       'FORMAT3_OPCODE',
+	'srl'           :       'FORMAT3_OPCODE',
+	'sub'           :       'FORMAT3_OPCODE',
+	'subcc'         :       'FORMAT3_OPCODE',
+	'subx'          :       'FORMAT3_OPCODE',
+	'subxcc'        :       'FORMAT3_OPCODE',
+	'taddcc'        :       'FORMAT3_OPCODE',
+	'taddcctv'      :       'FORMAT3_OPCODE',
+	'tsubcc'        :       'FORMAT3_OPCODE',
+	'tsubcctv'      :       'FORMAT3_OPCODE',
+	'udiv'          :       'FORMAT3_OPCODE',
+	'udivcc'        :       'FORMAT3_OPCODE',
+	'umul'          :       'FORMAT3_OPCODE',
+	'umulcc'        :       'FORMAT3_OPCODE',
+	'xnor'          :       'FORMAT3_OPCODE',
+	'xnorcc'        :       'FORMAT3_OPCODE',
+	'xor'           :       'FORMAT3_OPCODE',
+
+}
+
 identifier_regex = r'\.?[a-zA-Z_][a-zA-Z0-9_]*'
 label_regex      = identifier_regex + r':'
-# TODO(mkelly): allow hex, octal
 int_regex        = r'-?(0x)?[0-9]+'
 float_regex      = r'-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
 string_regex     = r'"([^"\\]|(\\.))*"'
@@ -123,6 +176,11 @@ def t_LINE_COMMENT(t):
 
 def t_COMMA(t):
 	r','
+	print_token(t)
+	return t
+
+def t_SEMICOLON(t):
+	r';'
 	print_token(t)
 	return t
 
@@ -168,15 +226,7 @@ def t_LABEL(t):
 t_LABEL.__doc__ = label_regex
 
 def t_IDENTIFIER(t):
-	if not t.lexer.seen_opcode:
-		t.lexer.seen_opcode = 1
-		t.type = 'IDENTIFIER'
-	else:
-		if t.value == 'a':
-			t.type = 'ANNULLED'
-		else:
-			t.type = 'NAME'
-	print_token(t)
+	t.type = reserved.get(t.value, 'IDENTIFIER')
 	return t
 t_IDENTIFIER.__doc__ = identifier_regex
 
@@ -240,40 +290,30 @@ def t_error(t):
 
 # NOTE: These are _not_ lines. They may be more than one line. I cannot think
 # of a good name.
+def p_file(p):
+	'''file : line
+		| line line'''
+	debug_fname()
+	p[0] = plist(p)
+
 def p_line(p):
-	'''line : label
-	        | comment
-		| command
-		| varassign
-		| line line
-		|'''
+	'''line : 
+		| comment
+		| statementlist
+		| statementlist comment'''
 	debug_fname()
 	p[0] = plist(p)
 
-# TODO(mkelly): expand to include non-trivial expressions
-def p_integer_expr(p):
-	'''integer_expr : INTEGER'''
+def p_statementlist(p):
+	'''statementlist : statement
+		| statement SEMICOLON statementlist'''
 	debug_fname()
 	p[0] = plist(p)
 
-# TODO(mkelly): expand to include non-trivial expressions
-def p_float_expr(p):
-	'''float_expr : FLOAT'''
-	debug_fname()
-	p[0] = plist(p)
-
-def p_register(p):
-	'''register : REGISTER'''
-	debug_fname()
-	p[0] = plist(p)
-
-def p_string(p):
-	'''string : STRING'''
-	debug_fname()
-	p[0] = plist(p)
-
-def p_character(p):
-	'''character : CHARACTER'''
+def p_statement(p):
+	'''statement : label
+		| instruction 
+		| label instruction'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -282,27 +322,97 @@ def p_label(p):
 	debug_fname()
 	p[0] = plist(p)
 
-def p_name(p):
-	'''name : NAME'''
+def p_instruction(p):
+	'''instruction : format1
+		| format3
+		| syntheticzeroargs
+		| clear_mem
+		| mov_instr
+		| set_instr'''
+#	'''instruction : opcode
+#		| inc_dec
+#		| jump
+#		| load
+#		| compare
+#		| format3c
+#		| branch
+#		| synth
+#		| btest
+#		| mov
+#		| neg
+#		| not
+#		| sethi
+#		| test'''
 	debug_fname()
 	p[0] = plist(p)
 
-def p_operand(p):
-	'''operand : integer_expr
-	           | float_expr
-	           | register
-		   | string
-		   | character
-		   | name'''
+# (dlindqui) We ignore other formats accepted by call reg_or_imm
+def p_format1(p):
+	'''format1 : CALL IDENTIFIER'''
 	debug_fname()
 	p[0] = plist(p)
 
-def p_operand_list(p):
-	'''operand_list : operand_list COMMA operand_list
-	                | operand'''
+#TODO(dlindqui) We need to accept constant in Rs2
+def p_format3(p):
+	'''format3 : FORMAT3_OPCODE REGISTER COMMA REGISTER COMMA REGISTER
+		| FORMAT3_OPCODE REGISTER COMMA integer_expr COMMA REGISTER'''
 	debug_fname()
 	p[0] = plist(p)
 
+def p_syntheticzeroargs(p):
+	'''syntheticzeroargs : SYNTHETIC_ZERO_ARG_OPCODE'''
+	debug_fname()
+	p[0] = plist(p)
+
+#TODO(dlindqui) We need to handle case CLEAR_MEM_OPCODE address
+def p_clear_mem(p):
+	'''clear_mem : CLEAR_MEM_OPCODE REGISTER'''
+	debug_fname()
+	p[0] = plist(p)
+
+def p_mov_istr(p):
+	'''mov_instr : MOV REGISTER COMMA REGISTER
+		| MOV integer_expr COMMA REGISTER'''
+	debug_fname()
+	p[0] = plist(p)
+
+def p_set_instr(p):
+	'''set_instr : SET integer_expr COMMA REGISTER'''
+	debug_fname()
+	p[0] = plist(p)
+
+
+# TODO(mkelly): expand to include non-trivial expressions
+def p_integer_expr(p):
+	'''integer_expr : INTEGER'''
+	debug_fname()
+	p[0] = plist(p)
+
+# TODO(mkelly): expand to include non-trivial expressions
+#def p_float_expr(p):
+#	'''float_expr : FLOAT'''
+#	debug_fname()
+#	p[0] = plist(p)
+
+#def p_register(p):
+#	'''register : REGISTER'''
+#	debug_fname()
+#	p[0] = plist(p)
+
+#def p_string(p):
+#	'''string : STRING'''
+#	debug_fname()
+#	p[0] = plist(p)
+
+#def p_character(p):
+#	'''character : CHARACTER'''
+#	debug_fname()
+#	p[0] = plist(p)
+
+#def p_name(p):
+#	'''name : NAME'''
+#	debug_fname()
+#	p[0] = plist(p)
 
 def p_comment(p):
 	'''comment : BLOCK_COMMENT
@@ -310,22 +420,22 @@ def p_comment(p):
 	debug_fname()
 	p[0] = plist(p)
 
-def p_varassign(p):
-	'''varassign : IDENTIFIER EQUALS operand'''
-	debug_fname()
-	p[0] = plist(p)
+#def p_varassign(p):
+#	'''varassign : IDENTIFIER EQUALS operand'''
+#	debug_fname()
+#	p[0] = plist(p)
 
-def p_opcode(p):
-	'''opcode : IDENTIFIER
-	          | IDENTIFIER COMMA ANNULLED'''
-	debug_fname()
-	p[0] = plist(p)
+#def p_opcode(p):
+#	'''opcode : IDENTIFIER
+#	          | IDENTIFIER COMMA ANNULLED'''
+#	debug_fname()
+#	p[0] = plist(p)
 
-def p_command(p):
-	'''command : opcode operand_list
-	           | opcode'''
-	debug_fname()
-	p[0] = plist(p)
+#def p_command(p):
+#	'''command : opcode operand_list
+#	           | opcode'''
+#	debug_fname()
+#	p[0] = plist(p)
 
 def p_error(p):
 	error("Syntax error at token %s" % str(p))
