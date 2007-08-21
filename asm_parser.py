@@ -86,18 +86,18 @@ def get_num_errors():
 # -----------------------------------------------------------------------------
 
 tokens = (
-	'ANNULLED',
+#	'ANNULLED',
 	'BLOCK_COMMENT',
-	'CHARACTER',
+#	'CHARACTER',
 	'COMMA',
 	'SEMICOLON',
-	'EQUALS',
+#	'EQUALS',
 	'IDENTIFIER',
 	'INTEGER',
 	'LABEL',
 	'LINE_COMMENT',
 	'REGISTER',
-	'STRING',
+#	'STRING',
 	'MOV',
 	'SET',
 	'CALL',
