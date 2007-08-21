@@ -101,6 +101,7 @@ tokens = (
 	'MOV',
 	'SET',
 	'CALL',
+	'NEWLINE',
 	'FORMAT3_OPCODE',
 	'SYNTHETIC_ZERO_ARG_OPCODE',
 	'CLEAR_MEM_OPCODE'
@@ -271,7 +272,7 @@ def t_EQUALS(t):
 
 t_ignore = " \t"
 
-def t_newline(t):
+def t_NEWLINE(t):
 	r'\n+'
 	t.lexer.lineno += t.value.count("\n")
 	t.lexer.seen_label = 0
@@ -288,11 +289,9 @@ def t_error(t):
 # Parsing rules
 # -----------------------------------------------------------------------------
 
-# NOTE: These are _not_ lines. They may be more than one line. I cannot think
-# of a good name.
 def p_file(p):
 	'''file : line
-		| line line'''
+		| line NEWLINE file'''
 	debug_fname()
 	p[0] = plist(p)
 
