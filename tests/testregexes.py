@@ -44,9 +44,14 @@ class TestRegexes(unittest.TestCase):
 		self._regex_tester(asm_parser.int_regex, pos, neg)
 
 	def testIdentifier(self):
-		pos = ['foo', 'foo_bar', 'FOO', 'foo_123', '.foo', '.f1o2o3']
-		neg = ['', '1foo', 'foo.bar', '', 'foo.', '.']
+		pos = ['foo', 'foo_bar', 'FOO', 'foo_123', '.foo', '.f1o2o3', 'foo$bar', '$$$']
+		neg = ['', '1foo']
 		self._regex_tester(asm_parser.identifier_regex, pos, neg)
+	
+	def testLabel(self):
+		pos = ['foo:', 'LLC0:', '.LLC0:', '.foo$bar:', '1:']
+		neg = ['', ':', '01:' '0a:']
+		self._regex_tester(asm_parser.label_regex, pos, neg)
 
 	def testString(self):
 		pos = [r'""', r'" "', r'"foo"', r'"foo\'bar"', r'"\n"',
@@ -60,11 +65,17 @@ class TestRegexes(unittest.TestCase):
 		self._regex_tester(asm_parser.char_regex, pos, neg)
 	
 	def testFloatingPoint(self):
-		pos = ['1', '1.', '1.5', '42.14159', '.5', '-.5', '0.5',
-			'01.5', '1.5E4', '1e5', '0', '-0', '-1.5', '-1.5e3',
-			'-1.5e-3']
-		neg = ['', 'foo', '.', 'e5', '1..5', '--5', '-5e--5']
+		pos = ['0r1', '0r1.', '0r1.5', '0r42.14159', '0r.5', '0r-.5', '0r0.5',
+			'0r01.5', '0r1.5E4', '0r1e5', '0r0', '0r-0', '0r-1.5', '0r-1.5e3',
+			'0r-1.5e-3']
+		neg = ['0r', 'foo', '0rfoo', '0r.', '.', '0re5', '0r1..5',
+			'0r--5', '0r-5e--5']
 		self._regex_tester(asm_parser.float_regex, pos, neg)
-			
+	
+	def testRegister(self):
+		pos = ['%g0', '%r1', '%l4', '%scr', '%y', '%r_disp32']
+		neg = ['', '%%', '%']
+		self._regex_tester(asm_parser.reg_regex, pos, neg)
+
 if __name__ == '__main__':
 	unittest.main()

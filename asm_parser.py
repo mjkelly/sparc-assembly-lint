@@ -91,9 +91,10 @@ tokens = (
 #	'CHARACTER',
 	'COMMA',
 	'SEMICOLON',
-#	'EQUALS',
+	'EQUALS',
 	'IDENTIFIER',
 	'INTEGER',
+	'FLOAT',
 	'LABEL',
 	'LINE_COMMENT',
 	'REGISTER',
@@ -161,18 +162,18 @@ reserved = {
 
 }
 
-identifier_regex = r'\.?[a-zA-Z_][a-zA-Z0-9_]*'
-label_regex      = identifier_regex + r':'
+identifier_regex = r'\.?[a-zA-Z_$\.][a-zA-Z_$\.0-9]*'
+label_regex      = r'((' + identifier_regex + r')|\d):'
 int_regex        = r'-?(0x)?[0-9]+'
-float_regex      = r'-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
+float_regex      = r'0r-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
 string_regex     = r'"([^"\\]|(\\.))*"'
 char_regex       = r"'(([^'\\])|(\\.))'"
-reg_regex        = r'%([gilo][0-9]|fp|sp|hi|lo)'
+reg_regex        = r'%[\w]+'	# very permissive; screen after matching
+operator_regex   = r'(+|-|\*|/|%|^|<<|>>|&|\||%hi|%lo)'
 
 def t_LINE_COMMENT(t):
 	r'![^\n]*'
 	print_token(t)
-	#debug("<block comment line>")
 	return t
 
 def t_COMMA(t):
@@ -205,7 +206,6 @@ def t_INCOMMENT_newline(t):
 	r'\n+'
 	t.lexer.block_comment_data += t.value
 	t.lexer.lineno += t.value.count("\n")
-	#debug("<newline>")
 
 def t_INCOMMENT_continue(t):
 	r'.'
@@ -277,7 +277,6 @@ def t_NEWLINE(t):
 	t.lexer.lineno += t.value.count("\n")
 	t.lexer.seen_label = 0
 	t.lexer.seen_opcode = 0
-	#debug("<newline>")
 
 def t_error(t):
 	error("Illegal character '%s'" % t.value[0])
@@ -312,7 +311,8 @@ def p_statementlist(p):
 def p_statement(p):
 	'''statement : label
 		| instruction 
-		| label instruction'''
+		| label instruction
+		| varassign'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -388,23 +388,26 @@ def p_integer_expr(p):
 	p[0] = plist(p)
 
 # TODO(mkelly): expand to include non-trivial expressions
-#def p_float_expr(p):
-#	'''float_expr : FLOAT'''
+def p_float_expr(p):
+	'''float_expr : FLOAT'''
+	debug_fname()
+	p[0] = plist(p)
+
+# TODO(mkelly): expand to include non-trivial expressions
+# %l0 + 1, etc.
+#def p_register_expr(p):
+#	'''register : REGISTER'''
 #	debug_fname()
 #	p[0] = plist(p)
 
-#def p_register(p):
-#	'''register : REGISTER'''
+# TODO(mkelly): expand to include non-trivial expressions
+#def p_character_expr(p):
+#	'''character : CHARACTER'''
 #	debug_fname()
 #	p[0] = plist(p)
 
 #def p_string(p):
 #	'''string : STRING'''
-#	debug_fname()
-#	p[0] = plist(p)
-
-#def p_character(p):
-#	'''character : CHARACTER'''
 #	debug_fname()
 #	p[0] = plist(p)
 
@@ -419,10 +422,12 @@ def p_comment(p):
 	debug_fname()
 	p[0] = plist(p)
 
-#def p_varassign(p):
-#	'''varassign : IDENTIFIER EQUALS operand'''
-#	debug_fname()
-#	p[0] = plist(p)
+def p_varassign(p):
+	'''varassign : IDENTIFIER EQUALS integer_expr
+	             | IDENTIFIER EQUALS float_expr
+		     | IDENTIFIER EQUALS IDENTIFIER'''
+	debug_fname()
+	p[0] = plist(p)
 
 #def p_opcode(p):
 #	'''opcode : IDENTIFIER

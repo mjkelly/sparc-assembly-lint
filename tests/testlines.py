@@ -79,6 +79,9 @@ class TestSingleLines(unittest.TestCase):
 	def testVarAssignmentToHex(self):
 		self._runGood('A=0x41')
 
+	def testVarAssignmentToSymbol(self):
+		self._runGood('X=label')
+
 #	def testTwoRegisterLoad(self):
 #		self._runGood('ld      [%i0 + %o0], %l0')
 #	
