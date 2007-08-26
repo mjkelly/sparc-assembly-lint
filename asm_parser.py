@@ -328,7 +328,6 @@ def p_instruction(p):
 		| clear_mem
 		| mov_instr
 		| set_instr'''
-#	'''instruction : opcode
 #		| inc_dec
 #		| jump
 #		| load
@@ -345,16 +344,13 @@ def p_instruction(p):
 	debug_fname()
 	p[0] = plist(p)
 
-# (dlindqui) We ignore other formats accepted by call reg_or_imm
 def p_format1(p):
 	'''format1 : CALL IDENTIFIER'''
 	debug_fname()
 	p[0] = plist(p)
 
-#TODO(dlindqui) We need to accept constant in Rs2
 def p_format3(p):
-	'''format3 : FORMAT3_OPCODE REGISTER COMMA REGISTER COMMA REGISTER
-		| FORMAT3_OPCODE REGISTER COMMA integer_expr COMMA REGISTER'''
+	'''format3 : FORMAT3_OPCODE reg COMMA reg_or_imm COMMA reg'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -365,40 +361,20 @@ def p_syntheticzeroargs(p):
 
 #TODO(dlindqui) We need to handle case CLEAR_MEM_OPCODE address
 def p_clear_mem(p):
-	'''clear_mem : CLEAR_MEM_OPCODE REGISTER'''
+	'''clear_mem : CLEAR_MEM_OPCODE reg'''
 	debug_fname()
 	p[0] = plist(p)
 
 def p_mov_istr(p):
-	'''mov_instr : MOV REGISTER COMMA REGISTER
-		| MOV integer_expr COMMA REGISTER'''
+	'''mov_instr : MOV reg_or_imm COMMA reg'''
 	debug_fname()
 	p[0] = plist(p)
 
 def p_set_instr(p):
-	'''set_instr : SET integer_expr COMMA REGISTER'''
+	'''set_instr : SET integer_expr COMMA reg'''
 	debug_fname()
 	p[0] = plist(p)
 
-
-# TODO(mkelly): expand to include non-trivial expressions
-def p_integer_expr(p):
-	'''integer_expr : INTEGER'''
-	debug_fname()
-	p[0] = plist(p)
-
-# TODO(mkelly): expand to include non-trivial expressions
-def p_float_expr(p):
-	'''float_expr : FLOAT'''
-	debug_fname()
-	p[0] = plist(p)
-
-# TODO(mkelly): expand to include non-trivial expressions
-# %l0 + 1, etc.
-#def p_register_expr(p):
-#	'''register : REGISTER'''
-#	debug_fname()
-#	p[0] = plist(p)
 
 # TODO(mkelly): expand to include non-trivial expressions
 #def p_character_expr(p):
@@ -429,18 +405,69 @@ def p_varassign(p):
 	debug_fname()
 	p[0] = plist(p)
 
-#def p_opcode(p):
-#	'''opcode : IDENTIFIER
-#	          | IDENTIFIER COMMA ANNULLED'''
-#	debug_fname()
-#	p[0] = plist(p)
+# ----------
+# Arguments
+# ----------
 
-#def p_command(p):
-#	'''command : opcode operand_list
-#	           | opcode'''
-#	debug_fname()
-#	p[0] = plist(p)
+# TODO(dlindqui): An address can also be formed by adding or subtracting registers and constants.
+#
+# e.g:
+# regrs1 + regrs2
+# regrs1 + const13
+# regrs1 - const13
+# const13 + regrs1
+# const13 
+def p_address(p):
+	'''address : reg_or_imm'''
 
+def p_reg_or_imm(p):
+	'''reg_or_imm : const13 
+	             | reg'''
+	debug_fname()
+	p[0] = plist(p)
+
+# TODO(dlindqui): These should be floating point registers (f0-f31) only.
+def freq(p):
+	'''freq : REGISTER'''
+	debug_fname()
+	p[0] = plist(p)
+	
+
+# TODO(dlindqui): These should be general purpose (r, g, o, l, i) only.
+def p_reg(p):
+	'''reg : REGISTER'''
+	debug_fname()
+	p[0] = plist(p)
+
+# A signed constant which fits in 13 bits. It can be the result of the evaluation of a symbol expression. 
+#TODO(dlindqui): We need to be able to handle evaluations here and optionally check range (must fit in 13 bits).
+def p_const13(p):
+	'''const13 : integer_expr 
+	             | IDENTIFIER'''
+
+# A constant which fits in 22 bits. It can be the result of the evaluation of a symbol expression. 
+#TODO(dlindqui): We need to be able to handle evaluations here and optionally check range (must fit in 13 bits).
+# Note: this is only used by sethi.
+#def p_const22(p):
+#	'''const22 : integer_expr 
+#	             | IDENTIFIER'''
+
+
+# TODO(mkelly): expand to include non-trivial expressions
+def p_integer_expr(p):
+	'''integer_expr : INTEGER'''
+	debug_fname()
+	p[0] = plist(p)
+
+# TODO(mkelly): expand to include non-trivial expressions
+def p_float_expr(p):
+	'''float_expr : FLOAT'''
+	debug_fname()
+	p[0] = plist(p)
+
+# ----------
+# Misc.
+# ----------
 def p_error(p):
 	error("Syntax error at token %s" % str(p))
 	if p is not None:

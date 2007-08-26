@@ -12,3 +12,8 @@ Errors to catch:
 - set (or other multi-instruction pseudo-ops) in delay slot
 - branch in delay slot (works, but undefined)
 - label in delay slot? (valid, but in how many cases is it intended?)
+
+TODO:
+.section, .global, etc
+save instruction (may require expressions first)
+Opcodes that are commented out

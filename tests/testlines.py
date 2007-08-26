@@ -63,6 +63,8 @@ class TestSingleLines(unittest.TestCase):
 	
 	def testCommand_2Args(self):
 		self._runGood('mov     %g0, %l0')
+		self._runGood('mov     10, %l0')
+		self._runGood('mov     label, %l0')
 	
 	def testCommand_3Args(self):
 		self._runGood('add     %g0, 10, %l0')
@@ -81,7 +83,7 @@ class TestSingleLines(unittest.TestCase):
 
 	def testVarAssignmentToSymbol(self):
 		self._runGood('X=label')
-
+	
 #	def testTwoRegisterLoad(self):
 #		self._runGood('ld      [%i0 + %o0], %l0')
 #	
