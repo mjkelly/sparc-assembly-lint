@@ -312,7 +312,7 @@ def p_statement(p):
 	'''statement : label
 		| instruction 
 		| label instruction
-		| varassign'''
+		| macro'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -398,8 +398,8 @@ def p_comment(p):
 	debug_fname()
 	p[0] = plist(p)
 
-def p_varassign(p):
-	'''varassign : IDENTIFIER EQUALS integer_expr
+def p_macro(p):
+	'''macro : IDENTIFIER EQUALS integer_expr
 	             | IDENTIFIER EQUALS float_expr
 		     | IDENTIFIER EQUALS IDENTIFIER'''
 	debug_fname()
