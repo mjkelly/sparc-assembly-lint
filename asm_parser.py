@@ -98,14 +98,19 @@ tokens = (
 	'LABEL',
 	'LINE_COMMENT',
 	'REGISTER',
-#	'STRING',
+	'STRING',
 	'MOV',
 	'SET',
 	'CALL',
 	'NEWLINE',
 	'FORMAT3_OPCODE',
 	'SYNTHETIC_ZERO_ARG_OPCODE',
-	'CLEAR_MEM_OPCODE'
+	'CLEAR_MEM_OPCODE',
+	'PSEUDO_OP_0',
+	'PSEUDO_OP_INT',
+	'PSEUDO_OP_STR',
+	'PSEUDO_OP_STRS',
+	'PSEUDO_OP_SYMS',
 )
 
 # comments are the only multi-line things we have to deal with
@@ -160,6 +165,47 @@ reserved = {
 	'xnorcc'        :       'FORMAT3_OPCODE',
 	'xor'           :       'FORMAT3_OPCODE',
 
+	# pseudo-ops
+	# Those marked 'todo' don't have the right format specified (because it's complicated).
+	'.alias'        :       'PSEUDO_OP_0',		# compiler-generated only
+	'.align'        :       'PSEUDO_OP_INT',
+	'.ascii'        :       'PSEUDO_OP_STRS',
+	'.asciz'        :       'PSEUDO_OP_STRS',
+	'.byte'         :       'PSEUDO_OP_INT',
+	'.common'       :       'PSEUDO_OP_0',		# TODO
+	'.double'       :       'PSEUDO_OP_INT',
+	'.empty'        :       'PSEUDO_OP_0',
+	'.file'         :       'PSEUDO_OP_STR',
+	'.global'       :       'PSEUDO_OP_SYMS',
+	'.globl'        :       'PSEUDO_OP_SYMS',
+	'.half'         :       'PSEUDO_OP_INT',
+	'.ident'        :       'PSEUDO_OP_STR',
+	'.local'        :       'PSEUDO_OP_SYMS',
+	'.noalias'      :       'PSEUDO_OP_0',		# compiler-generated only; TODO
+	'.nonvolatile'  :       'PSEUDO_OP_0',
+	'.nword'        :       'PSEUDO_OP_INT',
+	'.optimstring'  :       'PSEUDO_OP_0',		# compiler-generated only
+	'.popsection'   :       'PSEUDO_OP_0',
+	'.proc'         :       'PSEUDO_OP_0',		# compiler-generated only; TODO
+	'.pushsection'  :       'PSEUDO_OP_0',		# TODO
+	'.quad'         :       'PSEUDO_OP_INT',
+	'.reserve'      :       'PSEUDO_OP_0',		# TODO
+	'.section'      :       'PSEUDO_OP_STR',	# TODO; need second arg
+	'.seg'          :       'PSEUDO_OP_SEG',
+	'.single'       :       'PSEUDO_OP_INT',
+	'.size'         :       'PSEUDO_OP_0',		# TODO
+	'.skip'         :       'PSEUDO_OP_INT',
+	'.stabn'        :       'PSEUDO_OP_0',		# TODO
+	'.stabs'        :       'PSEUDO_OP_0',		# TODO
+	'.type'         :       'PSEUDO_OP_0',		# TODO
+	'.uahalf'       :       'PSEUDO_OP_INT',
+	'.uaword'       :       'PSEUDO_OP_INT',
+	'.version'      :       'PSEUDO_OP_STR',
+	'.volatile'     :       'PSEUDO_OP_0',
+	'.weak'         :       'PSEUDO_OP_SYMS',	# does this take any # of args?
+	'.word'         :       'PSEUDO_OP_INT',
+	'.xword'        :       'PSEUDO_OP_INT',
+	'.xstabs'       :       'PSEUDO_OP_0',		# TODO
 }
 
 identifier_regex = r'\.?[a-zA-Z_$\.][a-zA-Z_$\.0-9]*'
@@ -227,7 +273,12 @@ def t_LABEL(t):
 t_LABEL.__doc__ = label_regex
 
 def t_IDENTIFIER(t):
-	t.type = reserved.get(t.value, 'IDENTIFIER')
+	if not lexer.seen_opcode:
+		t.type = reserved.get(t.value, 'IDENTIFIER')
+	else:
+		t.type = 'IDENTIFIER'
+	lexer.seen_opcode = 1
+	print_token(t)
 	return t
 t_IDENTIFIER.__doc__ = identifier_regex
 
@@ -327,7 +378,8 @@ def p_instruction(p):
 		| syntheticzeroargs
 		| clear_mem
 		| mov_instr
-		| set_instr'''
+		| set_instr
+		| pseudo_op'''
 #		| inc_dec
 #		| jump
 #		| load
@@ -375,6 +427,28 @@ def p_set_instr(p):
 	debug_fname()
 	p[0] = plist(p)
 
+# TODO(mkelly): make the arg lists right
+def p_pseudo_op(p):
+	'''pseudo_op : PSEUDO_OP_0
+	             | PSEUDO_OP_INT integer_expr
+	             | PSEUDO_OP_STR STRING
+	             | PSEUDO_OP_STRS strings
+	             | PSEUDO_OP_SYMS syms'''
+	debug_fname()
+	p[0] = plist(p)
+
+def p_strings(p):
+	'''strings : STRING
+	           | STRING COMMA strings'''
+	debug_fname()
+	p[0] = plist(p)
+
+def p_syms(p):
+	'''syms : IDENTIFIER
+	        | IDENTIFIER COMMA syms'''
+	debug_fname()
+	p[0] = plist(p)
+
 
 # TODO(mkelly): expand to include non-trivial expressions
 #def p_character_expr(p):
@@ -417,8 +491,9 @@ def p_macro(p):
 # regrs1 - const13
 # const13 + regrs1
 # const13 
-def p_address(p):
-	'''address : reg_or_imm'''
+#def p_address(p):
+#	'''address : reg_or_imm'''
+#(unused; suppressing warnings)
 
 def p_reg_or_imm(p):
 	'''reg_or_imm : const13 
@@ -427,10 +502,11 @@ def p_reg_or_imm(p):
 	p[0] = plist(p)
 
 # TODO(dlindqui): These should be floating point registers (f0-f31) only.
-def freq(p):
-	'''freq : REGISTER'''
-	debug_fname()
-	p[0] = plist(p)
+#def p_freq(p):
+#	'''freq : REGISTER'''
+#	debug_fname()
+#	p[0] = plist(p)
+#(unused; suppressing warnings)
 	
 
 # TODO(dlindqui): These should be general purpose (r, g, o, l, i) only.

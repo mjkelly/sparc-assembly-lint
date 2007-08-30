@@ -92,6 +92,23 @@ class TestSingleLines(unittest.TestCase):
 	
 	def testSetHex(self):
 		self._runGood('set     0x80000000, %l3')
+	
+	def testSectionData(self):
+		self._runGood('.section	".data"')
+	
+	def testGlobalMain(self):
+		self._runGood('.global	main, foo, bar')
+
+	# .global is a reserved word, but it should be a symbol when it appears
+	# as an argument
+	def testGlobalDotGlobal(self):
+		self._runGood('.global	.global')
+
+	def testSkip(self):
+		self._runGood('.skip	4')
+
+	def testSkip(self):
+		self._runGood('.asciz	"foo", "bar", "baz"')
 
 	def testInvalid1(self):
 		self._runBad('# foo')
