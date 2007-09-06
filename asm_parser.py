@@ -77,40 +77,52 @@ def yacc_error():
 	global yacc_errors
 	yacc_errors += 1
 
+def other_error():
+	'''Register an error that's neither due to lex or yacc, or is
+	indeterminate.'''
+	global other_errors
+	other_errors += 1
+
 def get_num_errors():
-	'''Get the number of lex errors + yacc errors.'''
-	return lex_errors + yacc_errors
+	'''Get the number of lex errors + yacc errors + other_errors.'''
+	return lex_errors + yacc_errors + other_errors
 
 # -----------------------------------------------------------------------------
 # Tokens
 # -----------------------------------------------------------------------------
 
 tokens = (
-#	'ANNULLED',
 	'BLOCK_COMMENT',
-#	'CHARACTER',
+	'CALL',
+	'CLEAR_MEM_OPCODE',
+	'CLOSE_BRACKET',
 	'COMMA',
-	'SEMICOLON',
 	'EQUALS',
+	'FLOAT',
+	'FORMAT3_OPCODE',
 	'IDENTIFIER',
 	'INTEGER',
-	'FLOAT',
 	'LABEL',
 	'LINE_COMMENT',
-	'REGISTER',
-	'STRING',
+	'LOAD',
+	'MINUS',
 	'MOV',
-	'SET',
-	'CALL',
 	'NEWLINE',
-	'FORMAT3_OPCODE',
-	'SYNTHETIC_ZERO_ARG_OPCODE',
-	'CLEAR_MEM_OPCODE',
+	'OPEN_BRACKET',
+	'PLUS',
 	'PSEUDO_OP_0',
 	'PSEUDO_OP_INT',
 	'PSEUDO_OP_STR',
 	'PSEUDO_OP_STRS',
 	'PSEUDO_OP_SYMS',
+	'REGISTER',
+	'SEMICOLON',
+	'SET',
+	'STRING',
+	'SYNTHETIC_ZERO_ARG_OPCODE',
+#	'ANNULLED',
+#	'CHARACTER',
+#	'STORE',
 )
 
 # comments are the only multi-line things we have to deal with
@@ -164,6 +176,29 @@ reserved = {
 	'xnor'          :       'FORMAT3_OPCODE',
 	'xnorcc'        :       'FORMAT3_OPCODE',
 	'xor'           :       'FORMAT3_OPCODE',
+
+	'ld'            :       'LOAD',
+	'ldsb'          :       'LOAD',
+	'ldsh'          :       'LOAD',
+	'ldstub'        :       'LOAD',
+	'ldub'          :       'LOAD',
+	'lduh'          :       'LOAD',
+	'ld'            :       'LOAD',
+	'ldd'           :       'LOAD',
+# these are also loads, but have different formats:
+#	'ldf'           :       'LOAD',
+#	'ldfsr'         :       'LOAD',
+#	'lddf'          :       'LOAD',
+#	'ldc'           :       'LOAD',
+#	'ldcsr'         :       'LOAD',
+#	'lddc'          :       'LOAD',
+#	'ldsba'         :       'LOAD',
+#	'ldsha'         :       'LOAD',
+#	'lduba'         :       'LOAD',
+#	'lduha'         :       'LOAD',
+#	'lda'           :       'LOAD',
+#	'ldda'          :       'LOAD',
+#	'ldstuba'       :       'LOAD',
 
 	# pseudo-ops
 	# Those marked 'todo' don't have the right format specified (because it's complicated).
@@ -229,6 +264,26 @@ def t_COMMA(t):
 
 def t_SEMICOLON(t):
 	r';'
+	print_token(t)
+	return t
+
+def t_PLUS(t):
+	r'\+'
+	print_token(t)
+	return t
+
+def t_MINUS(t):
+	r'-'
+	print_token(t)
+	return t
+
+def t_OPEN_BRACKET(t):
+	r'\['
+	print_token(t)
+	return t
+
+def t_CLOSE_BRACKET(t):
+	r'\]'
 	print_token(t)
 	return t
 
@@ -379,10 +434,10 @@ def p_instruction(p):
 		| clear_mem
 		| mov_instr
 		| set_instr
-		| pseudo_op'''
+		| pseudo_op
+		| load'''
 #		| inc_dec
 #		| jump
-#		| load
 #		| compare
 #		| format3c
 #		| branch
@@ -437,34 +492,10 @@ def p_pseudo_op(p):
 	debug_fname()
 	p[0] = plist(p)
 
-def p_strings(p):
-	'''strings : STRING
-	           | STRING COMMA strings'''
+def p_load(p):
+	'''load : LOAD address COMMA reg'''
 	debug_fname()
 	p[0] = plist(p)
-
-def p_syms(p):
-	'''syms : IDENTIFIER
-	        | IDENTIFIER COMMA syms'''
-	debug_fname()
-	p[0] = plist(p)
-
-
-# TODO(mkelly): expand to include non-trivial expressions
-#def p_character_expr(p):
-#	'''character : CHARACTER'''
-#	debug_fname()
-#	p[0] = plist(p)
-
-#def p_string(p):
-#	'''string : STRING'''
-#	debug_fname()
-#	p[0] = plist(p)
-
-#def p_name(p):
-#	'''name : NAME'''
-#	debug_fname()
-#	p[0] = plist(p)
 
 def p_comment(p):
 	'''comment : BLOCK_COMMENT
@@ -484,16 +515,13 @@ def p_macro(p):
 # ----------
 
 # TODO(dlindqui): An address can also be formed by adding or subtracting registers and constants.
-#
-# e.g:
-# regrs1 + regrs2
-# regrs1 + const13
-# regrs1 - const13
-# const13 + regrs1
-# const13 
-#def p_address(p):
-#	'''address : reg_or_imm'''
-#(unused; suppressing warnings)
+def p_address(p):
+	'''address : OPEN_BRACKET reg CLOSE_BRACKET
+	           | OPEN_BRACKET reg PLUS reg CLOSE_BRACKET
+	           | OPEN_BRACKET reg PLUS integer_expr CLOSE_BRACKET
+		   | OPEN_BRACKET reg MINUS integer_expr CLOSE_BRACKET'''
+	debug_fname()
+	p[0] = plist(p)
 
 def p_reg_or_imm(p):
 	'''reg_or_imm : const13 
@@ -520,6 +548,8 @@ def p_reg(p):
 def p_const13(p):
 	'''const13 : integer_expr 
 	             | IDENTIFIER'''
+	debug_fname()
+	p[0] = plist(p)
 
 # A constant which fits in 22 bits. It can be the result of the evaluation of a symbol expression. 
 #TODO(dlindqui): We need to be able to handle evaluations here and optionally check range (must fit in 13 bits).
@@ -527,6 +557,8 @@ def p_const13(p):
 #def p_const22(p):
 #	'''const22 : integer_expr 
 #	             | IDENTIFIER'''
+#	debug_fname()
+#	p[0] = plist(p)
 
 
 # TODO(mkelly): expand to include non-trivial expressions
@@ -540,6 +572,34 @@ def p_float_expr(p):
 	'''float_expr : FLOAT'''
 	debug_fname()
 	p[0] = plist(p)
+
+def p_strings(p):
+	'''strings : STRING
+	           | STRING COMMA strings'''
+	debug_fname()
+	p[0] = plist(p)
+
+def p_syms(p):
+	'''syms : IDENTIFIER
+	        | IDENTIFIER COMMA syms'''
+	debug_fname()
+	p[0] = plist(p)
+
+# TODO(mkelly): expand to include non-trivial expressions
+#def p_character_expr(p):
+#	'''character : CHARACTER'''
+#	debug_fname()
+#	p[0] = plist(p)
+
+#def p_string(p):
+#	'''string : STRING'''
+#	debug_fname()
+#	p[0] = plist(p)
+
+#def p_name(p):
+#	'''name : NAME'''
+#	debug_fname()
+#	p[0] = plist(p)
 
 # ----------
 # Misc.
@@ -558,6 +618,7 @@ def init_parser(verbosity_level):
 	# build lexer and parser
 	global lex_errors
 	global yacc_errors 
+	global other_errors 
 	global lexer
 	global yacc
 	global verbosity
@@ -569,4 +630,5 @@ def init_parser(verbosity_level):
 	lexer.seen_opcode = 0
 	lex_errors = 0
 	yacc_errors = 0
+	other_errors = 0
 	verbosity = verbosity_level

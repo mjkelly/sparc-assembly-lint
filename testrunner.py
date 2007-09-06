@@ -16,21 +16,46 @@ import unittest
 from tests.testregexes import TestRegexes
 from tests.testlines import TestSingleLines
 
-
-if __name__ == '__main__':
+def main():
 	opt_parser = OptionParser(usage="%prog [OPTIONS]")
 
 	opt_parser.add_option("--verbosity", action="store", dest="verbosity",
 		type="int", help="Output verbosity: -1 = completely silent, 0 = quiet, 1 = some debug, 2 = copious debug.")
+	opt_parser.add_option("--test", action="store", dest="test",
+		type="string", help="Name of specific test to run.")
 
 	opt_parser.set_defaults(verbosity=-1)
+	opt_parser.set_defaults(test=None)
 
 	(opts, args) = opt_parser.parse_args()
 
-	TestRegexes.verbosity = opts.verbosity
-	suite = unittest.TestLoader().loadTestsFromTestCase(TestRegexes)
-	unittest.TextTestRunner(verbosity=2).run(suite)
+	test_runner = TestRunner(opts)
 
-	TestSingleLines.verbosity = opts.verbosity
-	suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleLines)
-	unittest.TextTestRunner(verbosity=2).run(suite)
+	for method_name in dir(test_runner):
+		method = getattr(test_runner, method_name)
+		if method_name.startswith('runtest_') and callable(method):
+			if opts.test is None or 'runtest_' + opts.test == method_name:
+				print method_name
+				method()
+
+class TestRunner:
+	'''Contains short methods to kick off each test suite. Any method
+	starting with 'runtest_NAME' is assumed to control the test suite
+	NAME.'''
+
+	def __init__(self, opts):
+		self.opts = opts
+
+	def runtest_regexes(self):
+		TestRegexes.verbosity = self.opts.verbosity
+		suite = unittest.TestLoader().loadTestsFromTestCase(TestRegexes)
+		unittest.TextTestRunner(verbosity=2).run(suite)
+
+	def runtest_lines(self):
+		TestSingleLines.verbosity = self.opts.verbosity
+		suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleLines)
+		unittest.TextTestRunner(verbosity=2).run(suite)
+
+if __name__ == '__main__':
+	main()
+

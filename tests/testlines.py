@@ -43,6 +43,7 @@ class TestSingleLines(unittest.TestCase):
 		try:
 			num_errors = asmlint.run(BogusFile(lines), None, None, TestSingleLines.verbosity)
 		except Exception,e:
+			print "ASSERT FALSE!"
 			self.assert_(False)
 		return num_errors
 
@@ -84,8 +85,20 @@ class TestSingleLines(unittest.TestCase):
 	def testVarAssignmentToSymbol(self):
 		self._runGood('X=label')
 	
-#	def testTwoRegisterLoad(self):
-#		self._runGood('ld      [%i0 + %o0], %l0')
+	def testOneRegisterLoad(self):
+		self._runGood('ld      [%i0], %l0')
+
+	def testPositiveOffsetLoad(self):
+		self._runGood('ld      [%i0 + 15], %l0')
+
+	def testNegativeOffsetLoad(self):
+		self._runGood('ld      [%i0 - 15], %l0')
+
+	def testTwoRegisterLoad(self):
+		self._runGood('ld      [%i0 + %o0], %l0')
+
+	def testBadBrackets(self):
+		self._runBad('add     [%g0], 10, %l0')
 #	
 #	def testComplexCompare(self):
 #		self._runGood('cmp     %l5, NUM_OF_BANKS*4')

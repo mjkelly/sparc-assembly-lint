@@ -14,7 +14,7 @@ from optparse import OptionParser, OptionGroup
 import sys
 import pprint
 
-from asm_parser import yacc, debug, warn, info, get_num_errors, init_parser
+from asm_parser import yacc, debug, warn, info, get_num_errors, init_parser, other_error
 
 parse_tree = []
 
@@ -36,8 +36,8 @@ def run(handle, check_line_length, max_line_length, verbosity):
 		try:
 			parse_tree.append(str(yacc.parse(s)))
 		except Exception, e:
-			print 'Exception caught while parsing line %d!\n' % lineno
-			raise e
+			print 'Exception caught while parsing line %d: %s' % (lineno, e)
+			other_error()
 
 	return get_num_errors()
 
