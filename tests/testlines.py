@@ -128,6 +128,15 @@ class TestSingleLines(unittest.TestCase):
 	
 	def testInvalid2(self):
 		self._runBad('set, foo, bar')
+	
+	def testSave(self):
+		self._runGood('save	%sp, -96, %sp')
+
+	def testSaveExpr(self):
+		self._runGood('save	%sp, -(92 + 4 + 4 + 1) & -8, %sp')
+
+	def testBadExpr(self):
+		self._runBad('save	%sp, -(92 + 2) & & -8, %sp')
 
 			
 if __name__ == '__main__':

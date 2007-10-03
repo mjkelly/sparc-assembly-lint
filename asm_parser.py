@@ -92,10 +92,12 @@ def get_num_errors():
 # -----------------------------------------------------------------------------
 
 tokens = (
+	'BINARY_OPERATOR',
 	'BLOCK_COMMENT',
 	'CALL',
 	'CLEAR_MEM_OPCODE',
 	'CLOSE_BRACKET',
+	'CLOSE_PAREN',
 	'COMMA',
 	'EQUALS',
 	'FLOAT',
@@ -109,6 +111,7 @@ tokens = (
 	'MOV',
 	'NEWLINE',
 	'OPEN_BRACKET',
+	'OPEN_PAREN',
 	'PLUS',
 	'PSEUDO_OP_0',
 	'PSEUDO_OP_INT',
@@ -120,6 +123,7 @@ tokens = (
 	'SET',
 	'STRING',
 	'SYNTHETIC_ZERO_ARG_OPCODE',
+	'UNARY_OPERATOR',
 #	'ANNULLED',
 #	'CHARACTER',
 #	'STORE',
@@ -250,7 +254,14 @@ float_regex      = r'0r-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
 string_regex     = r'"([^"\\]|(\\.))*"'
 char_regex       = r"'(([^'\\])|(\\.))'"
 reg_regex        = r'%[\w]+'	# very permissive; screen after matching
-operator_regex   = r'(+|-|\*|/|%|^|<<|>>|&|\||%hi|%lo)'
+
+# we're skipping %lo, %hi, etc for now, because they look like registers, and +
+# and - because they're already defined as PLUS and MINUS.
+unary_operator_regex    = r'~'
+binary_operator_regex   = r'(\*|/|%|\^|<<|>>|&|\|)'
+# these are the canonical lists, but they cause ambiguities:
+#unary_operator_regex    = r'(\+|-|~|%lo|%hi|%r_disp32|%r_disp64|%r_plt32|%r_plt64)'
+#binary_operator_regex   = r'(\+|-|\*|/|%|\^|<<|>>|&|\|)'
 
 def t_LINE_COMMENT(t):
 	r'![^\n]*'
@@ -370,6 +381,16 @@ def t_EQUALS(t):
 	print_token(t)
 	return t
 
+def t_OPEN_PAREN(t):
+	r'\('
+	print_token(t)
+	return t
+
+def t_CLOSE_PAREN(t):
+	r'\)'
+	print_token(t)
+	return t
+
 # We probably need this later to do some error reporting. It will make all the
 # rules more complex...
 #def t_WHITESPACE(t):
@@ -377,6 +398,16 @@ def t_EQUALS(t):
 #	return t
 
 t_ignore = " \t"
+
+def t_UNARY_OPERATOR(t):
+	print_token(t)
+	return t
+t_UNARY_OPERATOR.__doc__ = unary_operator_regex
+
+def t_BINARY_OPERATOR(t):
+	print_token(t)
+	return t
+t_BINARY_OPERATOR.__doc__ = binary_operator_regex
 
 def t_NEWLINE(t):
 	r'\n+'
@@ -561,9 +592,17 @@ def p_const13(p):
 #	p[0] = plist(p)
 
 
-# TODO(mkelly): expand to include non-trivial expressions
+# Note: We don't even consider precedence here, because we don't calculate the
+# expressions.
 def p_integer_expr(p):
-	'''integer_expr : INTEGER'''
+	'''integer_expr : INTEGER
+	                | MINUS integer_expr
+			| PLUS integer_expr
+			| UNARY_OPERATOR integer_expr
+			| integer_expr BINARY_OPERATOR integer_expr
+			| integer_expr PLUS integer_expr
+			| integer_expr MINUS integer_expr
+			| OPEN_PAREN integer_expr CLOSE_PAREN'''
 	debug_fname()
 	p[0] = plist(p)
 
