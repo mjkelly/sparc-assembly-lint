@@ -94,6 +94,12 @@ class TestSingleLines(unittest.TestCase):
 	def testNegativeOffsetLoad(self):
 		self._runGood('ld      [%i0 - 15], %l0')
 
+	def testExprOffset1(self):
+		self._runGood('ld      [%i0 + 15 - 2*3], %l0')
+
+	def testExprOffset2(self):
+		self._runGood('ld      [%i0 + 15 - 2*3 + MY_SPECIAL_OFFSET], %l0')
+
 	def testTwoRegisterLoad(self):
 		self._runGood('ld      [%i0 + %o0], %l0')
 
@@ -137,6 +143,9 @@ class TestSingleLines(unittest.TestCase):
 
 	def testBadExpr(self):
 		self._runBad('save	%sp, -(92 + 2) & & -8, %sp')
+
+	def testVarExpr(self):
+		self._runGood('save	%sp, -(92 + STACK_SPACE) & -8, %sp')
 
 			
 if __name__ == '__main__':

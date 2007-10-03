@@ -577,8 +577,7 @@ def p_reg(p):
 # A signed constant which fits in 13 bits. It can be the result of the evaluation of a symbol expression. 
 #TODO(dlindqui): We need to be able to handle evaluations here and optionally check range (must fit in 13 bits).
 def p_const13(p):
-	'''const13 : integer_expr 
-	             | IDENTIFIER'''
+	'''const13 : integer_expr'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -596,6 +595,7 @@ def p_const13(p):
 # expressions.
 def p_integer_expr(p):
 	'''integer_expr : INTEGER
+			| IDENTIFIER
 	                | MINUS integer_expr
 			| PLUS integer_expr
 			| UNARY_OPERATOR integer_expr
