@@ -441,15 +441,15 @@ def p_line(p):
 
 def p_statementlist(p):
 	'''statementlist : statement
-		| statement SEMICOLON statementlist'''
+	                 | statement SEMICOLON statementlist'''
 	debug_fname()
 	p[0] = plist(p)
 
 def p_statement(p):
 	'''statement : label
-		| instruction 
-		| label instruction
-		| macro'''
+	             | instruction 
+	             | label instruction
+	             | macro'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -460,25 +460,25 @@ def p_label(p):
 
 def p_instruction(p):
 	'''instruction : format1
-		| format3
-		| syntheticzeroargs
-		| clear_mem
-		| mov_instr
-		| set_instr
-		| pseudo_op
-		| load'''
-#		| inc_dec
-#		| jump
-#		| compare
-#		| format3c
-#		| branch
-#		| synth
-#		| btest
-#		| mov
-#		| neg
-#		| not
-#		| sethi
-#		| test'''
+	               | format3
+	               | syntheticzeroargs
+	               | clear_mem
+	               | mov_instr
+	               | set_instr
+	               | pseudo_op
+	               | load'''
+#	               | inc_dec
+#	               | jump
+#	               | compare
+#	               | format3c
+#	               | branch
+#	               | synth
+#	               | btest
+#	               | mov
+#	               | neg
+#	               | not
+#	               | sethi
+#	               | test'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -536,8 +536,8 @@ def p_comment(p):
 
 def p_macro(p):
 	'''macro : IDENTIFIER EQUALS integer_expr
-	             | IDENTIFIER EQUALS float_expr
-		     | IDENTIFIER EQUALS IDENTIFIER'''
+	         | IDENTIFIER EQUALS float_expr
+	         | IDENTIFIER EQUALS IDENTIFIER'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -556,7 +556,7 @@ def p_address(p):
 
 def p_reg_or_imm(p):
 	'''reg_or_imm : const13 
-	             | reg'''
+	              | reg'''
 	debug_fname()
 	p[0] = plist(p)
 
@@ -595,14 +595,14 @@ def p_const13(p):
 # expressions.
 def p_integer_expr(p):
 	'''integer_expr : INTEGER
-			| IDENTIFIER
+	                | IDENTIFIER
 	                | MINUS integer_expr
-			| PLUS integer_expr
-			| UNARY_OPERATOR integer_expr
-			| integer_expr BINARY_OPERATOR integer_expr
-			| integer_expr PLUS integer_expr
-			| integer_expr MINUS integer_expr
-			| OPEN_PAREN integer_expr CLOSE_PAREN'''
+	                | PLUS integer_expr
+	                | UNARY_OPERATOR integer_expr
+	                | integer_expr BINARY_OPERATOR integer_expr
+	                | integer_expr PLUS integer_expr
+	                | integer_expr MINUS integer_expr
+	                | OPEN_PAREN integer_expr CLOSE_PAREN'''
 	debug_fname()
 	p[0] = plist(p)
 
