@@ -659,13 +659,11 @@ def p_oneortworeg(p):
 def p_label(p):
 	'''label : id COLON'''
 	p[0] = ast.Label(p[1])
-	#p[0] = plist(p)
 
 def p_macro(p):
 	'''macro : id EQUALS intexpr
 	         | id EQUALS STRING'''
 	p[0] = ast.Macro(p[1], p[3])
-	#p[0] = plist(p)
 
 def p_intexpr(p):
 	'''intexpr : INT
