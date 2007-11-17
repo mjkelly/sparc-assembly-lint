@@ -39,20 +39,16 @@ class TestRegexes(unittest.TestCase):
 			self.assert_(not r.match(bad))
 	
 	def testInteger(self):
-		pos = ['1', '123', '0', '05', '-1']
+		pos = ['1', '123', '0', '05', '-1', '0x0', '0x123', '0xabc',
+			'0xABC', '-0xff']
 		neg = ['', 'foo', '1.0', '1.', '.5', '.']
 		self._regex_tester(asm_parser.int_regex, pos, neg)
 
 	def testIdentifier(self):
 		pos = ['foo', 'foo_bar', 'FOO', 'foo_123', '.foo', '.f1o2o3', 'foo$bar', '$$$']
 		neg = ['', '1foo']
-		self._regex_tester(asm_parser.identifier_regex, pos, neg)
+		self._regex_tester(asm_parser.id_regex, pos, neg)
 	
-	def testLabel(self):
-		pos = ['foo:', 'LLC0:', '.LLC0:', '.foo$bar:', '1:']
-		neg = ['', ':', '01:' '0a:']
-		self._regex_tester(asm_parser.label_regex, pos, neg)
-
 	def testString(self):
 		pos = [r'""', r'" "', r'"foo"', r'"foo\'bar"', r'"\n"',
 			r'"foo\r\nbar"', r'"\""', r'"foo\"bar"', r'"foo\\\"bar"', r'"\\"', r'"\\\""']

@@ -14,29 +14,35 @@ from optparse import OptionParser, OptionGroup
 import sys
 import pprint
 
-from asm_parser import yacc, debug, warn, info, get_num_errors, init_parser, other_error
+from asm_parser import yacc, debug, warn, info, get_num_errors, \
+	get_num_warnings, init_parser, other_error, labels, macros, \
+	set_parser_lineno, ParseError, FormatCheckError
 
 parse_tree = []
 
-# Run the linter on a file handle.
-# @return the number of errors that occurred in the parse
-def run(handle, check_line_length, max_line_length, verbosity):
-	init_parser(verbosity)
+def run(handle, opts):
+	'''Run the linter on a file handle.
+	@return the number of errors that occurred in the parse'''
 	lineno = 0
+	init_parser(opts)
 	while True:
 		lineno += 1
+		set_parser_lineno(lineno)
 		s = handle.readline()
 		debug(">>> " + s.rstrip())
 
-		if check_line_length and len(s.rstrip('\n')) > max_line_length:
-			warn("%s:%d exceeds %d chars." % (handle.name, lineno, max_line_length))
+		if opts.check_line_length and len(s.rstrip('\n')) > opts.max_line_length:
+			warn("%s:%d exceeds %d chars." % (handle.name, lineno, opts.max_line_length))
 
 		if s == "":
 			break
+
 		try:
-			parse_tree.append(str(yacc.parse(s)))
-		except Exception, e:
-			print 'Exception caught while parsing line %d: %s' % (lineno, e)
+			subtree = yacc.parse(s)
+			if not (subtree is None):
+				parse_tree.append(subtree)
+		except (ParseError, FormatCheckError), e:
+			print 'Error on line %d: %s' % (lineno, e)
 			other_error()
 
 	return get_num_errors()
@@ -45,15 +51,23 @@ def main(argv):
 
 	opt_parser = OptionParser(usage="%prog [OPTIONS] [FILENAME]")
 
-	opt_parser.add_option("--check-line-length", action="store_true", dest="check_line_length",
-		help="Check line length.")
+	add_bool_option(opt_parser, 'check-line-length', 'check_line_length',
+		true_desc="Check line length.",
+		false_desc="Don't check line length. (Default)")
+
 	opt_parser.add_option("--max-line-length", action="store", dest="max_line_length",
 		type="int", help="Maximum acceptable line length when --check-line-length is on.")
+
+	add_bool_option(opt_parser, 'check-registers', 'check_regs',
+		true_desc="Check for suspicious register names. (Default)",
+		false_desc="Don't check for suspicious register names.")
+
 	opt_parser.add_option("--verbosity", action="store", dest="verbosity",
 		type="int", help="Output verbosity: -1 = completely silent, 0 = quiet, 1 = some debug, 2 = copious debug.")
 
 	opt_parser.set_defaults(max_line_length=80)
 	opt_parser.set_defaults(check_line_length=False)
+	opt_parser.set_defaults(check_regs=True)
 	opt_parser.set_defaults(verbosity=2)
 
 	input_file = sys.stdin
@@ -67,18 +81,41 @@ def main(argv):
 		input_filename = args[0]
 		input_file = open(input_filename, 'r')
 	
-	num_errors = run(input_file, opts.check_line_length, opts.max_line_length, opts.verbosity)
+	num_errors = run(input_file, opts)
 
 	if input_file != sys.stdin:
 		input_file.close()
+	
+	pp = pprint.PrettyPrinter(indent=2)
+	if opts.verbosity >= 0:
+		info("-----------------------------------------------------------------------------")
+		print "FINAL PARSE TREE:"
+		pp = pprint.PrettyPrinter(indent=2)
+		pp.pprint(parse_tree)
+		info("-----------------------------------------------------------------------------")
+		print "SYMBOL TABLE:"
+		print "Labels:"
+		pp.pprint(labels)
+		print "Macros:"
+		pp.pprint(macros)
 
 	info("-----------------------------------------------------------------------------")
-	info("%d errors." % num_errors)
+	if num_errors > 0:
+		info("%d errors." % num_errors)
+
+	num_warnings = get_num_warnings()
+	if num_warnings > 0:
+		info("%d warnings." % num_warnings)
 
 	if num_errors == 0:
 		return 0
 	else:
 		return 1
+
+def add_bool_option(parser, opt_flag_name, opt_var_name, true_desc, false_desc):
+	'''optparse provides no easy way to handle full boolean flags, so here it is.'''
+	parser.add_option(  '--' + opt_flag_name, action="store_true",  dest=opt_var_name, help=true_desc)
+	parser.add_option('--no-' + opt_flag_name, action="store_false", dest=opt_var_name, help=false_desc)
 
 # -----------------------------------------------------------------------------
 # Entry point

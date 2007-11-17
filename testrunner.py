@@ -10,11 +10,13 @@
 # Sun Aug 12 03:24:12 PDT 2007
 # -----------------------------------------------------------------
 
+import sys
 from optparse import OptionParser, OptionGroup
 import unittest
 
 from tests.testregexes import TestRegexes
 from tests.testlines import TestSingleLines
+#from tests.unit_tests import UnitTests
 
 def main():
 	opt_parser = OptionParser(usage="%prog [OPTIONS]")
@@ -31,12 +33,23 @@ def main():
 
 	test_runner = TestRunner(opts)
 
+	was_successful = True
+
 	for method_name in dir(test_runner):
 		method = getattr(test_runner, method_name)
 		if method_name.startswith('runtest_') and callable(method):
 			if opts.test is None or 'runtest_' + opts.test == method_name:
 				print method_name
-				method()
+				ret = method()
+				if not ret.wasSuccessful():
+					was_successful = False
+	
+	if was_successful:
+		return 0
+	else:
+		print "----------------------------------------------------------------"
+		print "SOME TESTS FAILED!"
+		return 1
 
 class TestRunner:
 	'''Contains short methods to kick off each test suite. Any method
@@ -49,13 +62,13 @@ class TestRunner:
 	def runtest_regexes(self):
 		TestRegexes.verbosity = self.opts.verbosity
 		suite = unittest.TestLoader().loadTestsFromTestCase(TestRegexes)
-		unittest.TextTestRunner(verbosity=2).run(suite)
+		return unittest.TextTestRunner(verbosity=2).run(suite)
 
 	def runtest_lines(self):
 		TestSingleLines.verbosity = self.opts.verbosity
 		suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleLines)
-		unittest.TextTestRunner(verbosity=2).run(suite)
-
+		return unittest.TextTestRunner(verbosity=2).run(suite)
+	
 if __name__ == '__main__':
-	main()
+	sys.exit(main())
 

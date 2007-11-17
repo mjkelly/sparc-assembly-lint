@@ -12,8 +12,10 @@ Errors to catch:
 - set (or other multi-instruction pseudo-ops) in delay slot
 - branch in delay slot (works, but undefined)
 - label in delay slot? (valid, but in how many cases is it intended?)
+- resolve all assembly constants
+- not %l0, %i2, %l0 <-- SEGFAULT on gcc
+- SAVE OFFSETS! SAVE OFFSETS! SAVE OFFSETS!
 
 TODO:
-.section, .global, etc
-save instruction (may require expressions first)
+Work on macro support; particularly exotic argument formats.
 Opcodes that are commented out
