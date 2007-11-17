@@ -664,7 +664,8 @@ def p_label(p):
 def p_macro(p):
 	'''macro : id EQUALS intexpr
 	         | id EQUALS STRING'''
-	p[0] = plist(p)
+	p[0] = ast.Macro(p[1], p[3])
+	#p[0] = plist(p)
 
 def p_intexpr(p):
 	'''intexpr : INT

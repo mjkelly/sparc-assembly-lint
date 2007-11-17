@@ -28,12 +28,32 @@ class Reg(ASTElement):
 		return "<Reg:%s>" % self.value
 
 class Label(ASTElement):
+	# Keep track of all labels by name.
+	all_labels = {}
+
 	def __init__(self, id):
 		'''@param id The Id object containing the label's name.'''
 		self.value = id.value
+		Label.all_labels[self.value] = self
+
 	def __str__(self):
 		return "<Label:%s>" % self.value
 
 class Id(ASTElement):
 	def __str__(self):
 		return "<Id:%s>" % self.value
+
+class Macro(ASTElement):
+	# Keep track of all macros by name.
+	all_macros = {}
+
+	def __init__(self, name, value):
+		'''New Macro, "name=value".
+		@param name Id object containing the name of the macro.
+		@param value the value of the macro. Varying types.'''
+		self.name = name.value
+		self.value = value
+		Macro.all_macros[self.name] = self
+
+	def __str__(self):
+		return "<Macro:%s=...>" % self.name

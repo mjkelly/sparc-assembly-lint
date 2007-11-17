@@ -15,8 +15,9 @@ import sys
 import pprint
 
 from asm_parser import yacc, debug, warn, info, get_num_errors, \
-	get_num_warnings, init_parser, other_error, labels, macros, \
+	get_num_warnings, init_parser, other_error, \
 	set_parser_lineno, ParseError, FormatCheckError
+import ast
 
 parse_tree = []
 
@@ -95,9 +96,9 @@ def main(argv):
 		info("-----------------------------------------------------------------------------")
 		print "SYMBOL TABLE:"
 		print "Labels:"
-		pp.pprint(labels)
+		pp.pprint(ast.Label.all_labels)
 		print "Macros:"
-		pp.pprint(macros)
+		pp.pprint(ast.Macro.all_macros)
 
 	info("-----------------------------------------------------------------------------")
 	if num_errors > 0:

@@ -15,13 +15,17 @@ from optparse import OptionParser, OptionGroup
 import unittest
 
 class BogusFile:
+	'''A fake file, sourced from a string.'''
+
 	def __init__(self, lines):
+		'''Create a new BogusFile, using the given string as the "contents".'''
 		self.lines = lines
 		self.index = 0
 		self.name = 'BogusFile'
 		
-	# Mimics readline
 	def readline(self):
+		'''Mimics readline. Returns one line of the "file"'s string at
+		a time.'''
 		# If we've reached the end of our list, return 'EOF'
 		if len(self.lines) == self.index:
 			return ""
@@ -53,13 +57,9 @@ class TestSingleLines(unittest.TestCase):
 		lines.append(line + "\n")
 		try:
 			num_errors = asmlint.run(BogusFile(lines), TestSingleLines.BogusOptions(self))
-		#except Exception, e:
 		except (asmlint.ParseError, asmlint.FormatCheckError), e:
 			print "ASSERT FAILED!"
 			self.assert_(False)
-			#raise e
-			#print "RETURNING 1..."
-			#return 1
 		return num_errors
 
 	def _runGood(self, line):
@@ -88,8 +88,9 @@ class TestSingleLines(unittest.TestCase):
 	def testCommand_AndComment(self):
 		self._runGood('mov	%g0, %l0! comment')
 	
-	def testLineComment(self):
+	def testComments(self):
 		self._runGood('! line comment')
+		self._runGood('/* block comment */')
 	
 	def testVarAssignment(self):
 		self._runGood('MYINT=10')
@@ -146,10 +147,8 @@ class TestSingleLines(unittest.TestCase):
 	def testGlobalDotGlobal(self):
 		self._runGood('.global	.global')
 
-	def testSkip1(self):
+	def testSkip(self):
 		self._runGood('.skip	4')
-
-	def testSkip2(self):
 		self._runGood('.skip	4, 1')
 
 	def testAsciz(self):
@@ -176,10 +175,8 @@ class TestSingleLines(unittest.TestCase):
 	def testVarExpr(self):
 		self._runGood('save	%sp, -(92 + STACK_SPACE) & -8, %sp')
 
-	def testCall1(self):
+	def testCall(self):
 		self._runGood('call	printf')
-
-	def testCall2(self):
 		self._runGood('call	printf, 3')
 
 	def testCallStrange(self):
@@ -194,10 +191,8 @@ class TestSingleLines(unittest.TestCase):
 	def testAnnulled(self):
 		self._runGood('bge,a	fooLabel')
 
-	def testAnnulledBadAnnull(self):
+	def testBadAnnulled(self):
 		self._runBad('bge,x	fooLabel')
-
-	def testAnnulledBadOpcode(self):
 		self._runBad('mov,a	%l0, %l1')
 	
 	def testBadNumberOfArguments(self):
@@ -205,6 +200,17 @@ class TestSingleLines(unittest.TestCase):
 		self._runBad('mov');
 		self._runBad('mov	%l0, %l1, %l2');
 		self._runBad('add	%l0, %l1, %l2, %l3');
+		self._runBad('bl	foo, bar');
+		self._runBad('bl');
+		self._runBad('bl,a');
+	
+	# Stuff I don't use or run into regularly, that might otherwise break
+	# without me noticing. NOT floating point stuff. That deserves its own
+	# category.
+	def testInfrequentOps(self):
+		self._runGood('not	%l0, %l1')
+		self._runGood('clr	[%l0]')
+		self._runGood('dec	42, %l1')
 
 if __name__ == '__main__':
 	unittest.main()
