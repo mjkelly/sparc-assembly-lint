@@ -15,6 +15,7 @@ Errors to catch:
 - resolve all assembly constants
 - not %l0, %i2, %l0 <-- SEGFAULT on gcc
 - SAVE OFFSETS! SAVE OFFSETS! SAVE OFFSETS!
+- bogus .section names (make sure to catch .section ."text")
 
 TODO:
 Work on macro support; particularly exotic argument formats.
