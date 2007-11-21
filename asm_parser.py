@@ -657,15 +657,29 @@ def p_macro(p):
 	'''macro : id EQUALS intexpr
 	         | id EQUALS STRING'''
 	p[0] = ast.Macro(p[1], p[3])
+	print "Value of macro is: %s" % p[3].resolve()
 
-def p_intexpr_single(p):
-	'''intexpr : INT
-		   | CHAR
-	           | id'''
+
+def p_intexpr_int(p):
+	'''intexpr : INT'''
+	p[0] = ast.IntExpr(p[1])
+
+def p_intexpr_char(p):
+	'''intexpr : CHAR'''
+	# XXX: BIG FAT WARNING: This is a stupid approximation that will work
+	# for all characters except \', \n, \r, etc. (Basically, anything
+	# that's not a single character in the file.) It's a stopgap solution
+	# while I make sure my overall intexpr-resolving system works. Worst
+	# case, use a LUT.
+	p[0] = ast.IntExpr(str(ord(p[1][1:2])))
+
+def p_intexpr_id(p):
+	'''intexpr : id'''
+	p[0] = ast.IntExpr(p[1].resolve())
 
 def p_intexpr_parens(p):
 	'''intexpr : LPAREN intexpr RPAREN'''
-	p[0] = plist(p)
+	p[0] = p[2]
 
 def p_intexpr_binary_ops(p):
 	'''intexpr : intexpr PLUS intexpr
@@ -678,14 +692,14 @@ def p_intexpr_binary_ops(p):
 	           | intexpr RSHIFT intexpr
 	           | intexpr AND intexpr
 	           | intexpr OR intexpr'''
-	p[0] = plist(p)
+	p[0] = ast.IntExpr(p[1], ast.BinaryOperator.from_str(p[2]), p[3])
 
 def p_intexpr_unary_ops(p):
 	'''intexpr : NOT intexpr
 		   | MINUS intexpr
 		   | LO intexpr
 		   | HI intexpr'''
-	p[0] = plist(p)
+	p[0] = ast.IntExpr(p[2], op=ast.UnaryOperator.from_str(p[1]))
 
 def p_reg(p):
 	'''reg : REG'''
