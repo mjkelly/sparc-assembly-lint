@@ -7,7 +7,7 @@ Errors to catch:
 - mention broken gcc behavior on labels without leading .L?
 - no label with same name as filename
 - check alignment
-- check for correct .section
+- check for correct .section (.data for .word, etc, .section for instrs)
 - check for .global
 - set (or other multi-instruction pseudo-ops) in delay slot
 - branch in delay slot (works, but undefined)
@@ -15,8 +15,7 @@ Errors to catch:
 - resolve all assembly constants
 - not %l0, %i2, %l0 <-- SEGFAULT on gcc
 - SAVE OFFSETS! SAVE OFFSETS! SAVE OFFSETS!
-- bogus .section names (make sure to catch .section ."text")
+- bogus .section names (make sure to catch: .section ."text"; .section .text; etc)
 
 TODO:
-Work on macro support; particularly exotic argument formats.
-Opcodes that are commented out
+Build abstract syntax tree

@@ -88,9 +88,6 @@ def plist(p):
 		pp.pprint(ret_list)
 	return ret_list
 
-def regex_from_list(list):
-	return '(' + '|'.join(list) + ')'
-
 def lex_error():
 	'''Register a lex error.'''
 	global lex_errors
@@ -439,16 +436,12 @@ def t_error(t):
 	lex_error()
 
 def p_line(p):
-	'''line : empty
+	'''line : 
 	        | NEWLINE
 	        | comment NEWLINE
 	        | statementlist NEWLINE
 		| statementlist comment NEWLINE'''
 	p[0] = plist(p)
-
-def p_empty(p):
-	'''empty : '''
-	return None
 
 def p_statementlist(p):
 	'''statementlist : statement
@@ -665,12 +658,17 @@ def p_macro(p):
 	         | id EQUALS STRING'''
 	p[0] = ast.Macro(p[1], p[3])
 
-def p_intexpr(p):
+def p_intexpr_single(p):
 	'''intexpr : INT
 		   | CHAR
-	           | id
-	           | LPAREN intexpr RPAREN
-	           | intexpr PLUS intexpr
+	           | id'''
+
+def p_intexpr_parens(p):
+	'''intexpr : LPAREN intexpr RPAREN'''
+	p[0] = plist(p)
+
+def p_intexpr_binary_ops(p):
+	'''intexpr : intexpr PLUS intexpr
 	           | intexpr MINUS intexpr
 	           | intexpr MUL intexpr
 	           | intexpr DIV intexpr
@@ -679,8 +677,11 @@ def p_intexpr(p):
 	           | intexpr LSHIFT intexpr
 	           | intexpr RSHIFT intexpr
 	           | intexpr AND intexpr
-	           | intexpr OR intexpr
-	           | NOT intexpr
+	           | intexpr OR intexpr'''
+	p[0] = plist(p)
+
+def p_intexpr_unary_ops(p):
+	'''intexpr : NOT intexpr
 		   | MINUS intexpr
 		   | LO intexpr
 		   | HI intexpr'''
