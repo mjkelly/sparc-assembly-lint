@@ -44,7 +44,7 @@ class Id(ASTElement):
 		return "<Id:%s>" % self.value
 	def resolve(self):
 		if self.value in Macro.all_macros:
-			return str(Macro.all_macros[self.value].value)
+			return str(Macro.all_macros[self.value].value.resolve())
 		else:
 			return None
 
