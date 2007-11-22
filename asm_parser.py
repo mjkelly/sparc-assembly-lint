@@ -657,7 +657,7 @@ def p_macro(p):
 	'''macro : id EQUALS intexpr
 	         | id EQUALS STRING'''
 	p[0] = ast.Macro(p[1], p[3])
-	print "Value of macro is: %s" % p[3].resolve()
+	#print "Value of macro is: %s" % p[3].resolve()
 
 
 def p_intexpr_int(p):
@@ -675,7 +675,7 @@ def p_intexpr_char(p):
 
 def p_intexpr_id(p):
 	'''intexpr : id'''
-	p[0] = ast.IntExpr(p[1].resolve())
+	p[0] = ast.IntExpr(p[1], sym=True)
 
 def p_intexpr_parens(p):
 	'''intexpr : LPAREN intexpr RPAREN'''

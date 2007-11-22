@@ -98,7 +98,10 @@ def main(argv):
 		print "Labels:"
 		pp.pprint(ast.Label.all_labels)
 		print "Macros:"
-		pp.pprint(ast.Macro.all_macros)
+		#pp.pprint(ast.Macro.all_macros)
+		for name in ast.Macro.all_macros:
+			m = ast.Macro.all_macros[name]
+			print "%s = %s" % (m, m.resolve())
 
 	info("-----------------------------------------------------------------------------")
 	if num_errors > 0:
