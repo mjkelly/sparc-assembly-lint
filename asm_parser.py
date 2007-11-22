@@ -666,12 +666,8 @@ def p_intexpr_int(p):
 
 def p_intexpr_char(p):
 	'''intexpr : CHAR'''
-	# XXX: BIG FAT WARNING: This is a stupid approximation that will work
-	# for all characters except \', \n, \r, etc. (Basically, anything
-	# that's not a single character in the file.) It's a stopgap solution
-	# while I make sure my overall intexpr-resolving system works. Worst
-	# case, use a LUT.
-	p[0] = ast.IntExpr(str(ord(p[1][1:2])))
+	# Yeah, I know this is cheating.
+	p[0] = ast.IntExpr(str(ord(eval(p[1]))))
 
 def p_intexpr_id(p):
 	'''intexpr : id'''
