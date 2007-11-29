@@ -26,25 +26,22 @@ def run(handle, opts):
 	@return the number of errors that occurred in the parse'''
 	lineno = 0
 	init_parser(opts)
-	while True:
-		lineno += 1
-		set_parser_lineno(lineno)
-		s = handle.readline()
-		debug(">>> " + s.rstrip())
 
-		if opts.check_line_length and len(s.rstrip('\n')) > opts.max_line_length:
+	try:
+		subtree = yacc.parse(handle.read(), tracking=True)
+	except (ParseError, FormatCheckError), e:
+		print 'Error on line %d: %s' % (lineno, e)
+		other_error()
+
+	parse_tree.append(subtree)
+
+	# re-read file checking line lengths.  We should figure out how to do
+	# this in the parser.
+	handle.seek(0)
+	for lineno, line in enumerate(handle):
+		lineno = lineno + 1	# enumerate is 0 based
+		if opts.check_line_length and len(line.rstrip('\n')) > opts.max_line_length:
 			warn("%s:%d exceeds %d chars." % (handle.name, lineno, opts.max_line_length))
-
-		if s == "":
-			break
-
-		try:
-			subtree = yacc.parse(s)
-			if not (subtree is None):
-				parse_tree.append(subtree)
-		except (ParseError, FormatCheckError), e:
-			print 'Error on line %d: %s' % (lineno, e)
-			other_error()
 
 	return get_num_errors()
 
@@ -64,12 +61,12 @@ def main(argv):
 		false_desc="Don't check for suspicious register names.")
 
 	opt_parser.add_option("--verbosity", action="store", dest="verbosity",
-		type="int", help="Output verbosity: -1 = completely silent, 0 = quiet, 1 = some debug, 2 = copious debug.")
+		type="int", help="Output verbosity: -1 = completely silent, 0 = quiet, 1 = some debug, 2 = copious debug. [ default: %default ]")
 
 	opt_parser.set_defaults(max_line_length=80)
 	opt_parser.set_defaults(check_line_length=False)
 	opt_parser.set_defaults(check_regs=True)
-	opt_parser.set_defaults(verbosity=2)
+	opt_parser.set_defaults(verbosity=1)
 
 	input_file = sys.stdin
 

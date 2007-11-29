@@ -37,7 +37,7 @@ class TestSingleLines(unittest.TestCase):
 		try:
 			num_errors = asmlint.run(StringIO(line + '\n'), TestSingleLines.BogusOptions(self))
 		except (asmlint.ParseError, asmlint.FormatCheckError), e:
-			print "ASSERT FAILED!"
+			print "ASSERT FAILED!", e
 			self.assert_(False)
 		return num_errors
 

@@ -435,12 +435,20 @@ def t_error(t):
 	t.lexer.skip(1)
 	lex_error()
 
+def p_file(p):
+	'''file : lines'''
+	p[0] = plist(p)
+
+def p_lines(p):
+	'''lines : line NEWLINE
+		| line NEWLINE lines'''
+	p[0] = plist(p)
+
 def p_line(p):
 	'''line : 
-	        | NEWLINE
-	        | comment NEWLINE
-	        | statementlist NEWLINE
-		| statementlist comment NEWLINE'''
+	        | comment 
+	        | statementlist 
+		| statementlist comment'''
 	p[0] = plist(p)
 
 def p_statementlist(p):
