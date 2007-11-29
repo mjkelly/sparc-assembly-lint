@@ -19,3 +19,4 @@ Errors to catch:
 
 TODO:
 Build abstract syntax tree
+David doesn't like the way verbosity is specified.  Would prefer -vvv and --silent.
