@@ -16,7 +16,7 @@ import pprint
 
 from asm_parser import yacc, debug, warn, info, get_num_errors, \
 	get_num_warnings, init_parser, other_error, \
-	set_parser_lineno, ParseError, FormatCheckError
+	ParseError, FormatCheckError
 import ast
 
 parse_tree = []

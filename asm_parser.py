@@ -52,20 +52,6 @@ def log(label, msg):
 	WARNING, etc) to stderr.'''
 	sys.stderr.write("%s: %s\n" % (label, msg))
 
-def set_parser_lineno(n):
-	'''Tell the parser what line it's on. This is so we can use our calling
-	function's line number, which is more reliable.'''
-	global lineno
-	lineno = n
-
-def get_parser_lineno():
-	'''Return the current line number, according to the most recent
-	set_parser_lineno() call. get/set_parser_lineno() should be used
-	instead of lexer.lineno. (It's easy: one changes, the other doesn't!
-	Pick the one that does.)'''
-	global lineno
-	return lineno
-
 def func_name(level=2):
 	'''Get the name of a function on the call stack.
 		@param level 1 = func_name's calling function, 2 caller's
@@ -265,6 +251,7 @@ def t_INCOMMENT_endcomment(t):
 def t_INCOMMENT_newline(t):
 	r'\n+'
 	t.lexer.block_comment_data += t.value
+	t.lexer.lineno += len(t.value)
 
 def t_INCOMMENT_continue(t):
 	r'.'
@@ -428,6 +415,7 @@ def t_HASH(t):
 # under normal circumstances.
 def t_NEWLINE(t):
 	r'\n+'
+	t.lexer.lineno += len(t.value)
 	return t
 
 def t_error(t):
@@ -752,8 +740,8 @@ def p_error(p):
 	if p is None:
 		val = "<NO TOKEN>";
 	else:
-		val = "'%s' (%s)" % (p.value, p.type)
-	error("Syntax error at token %s. Discarding rest of line." % val)
+		val = "'%s' (%s) on line %d" % (p.value, p.type, p.lineno)
+	error("Syntax error at token %s. Discarding..." % (val))
 	yacc_error()
 
 	while True:
