@@ -13,26 +13,7 @@
 import asmlint
 from optparse import OptionParser, OptionGroup
 import unittest
-
-class BogusFile:
-	'''A fake file, sourced from a string.'''
-
-	def __init__(self, lines):
-		'''Create a new BogusFile, using the given string as the "contents".'''
-		self.lines = lines
-		self.index = 0
-		self.name = 'BogusFile'
-		
-	def readline(self):
-		'''Mimics readline. Returns one line of the "file"'s string at
-		a time.'''
-		# If we've reached the end of our list, return 'EOF'
-		if len(self.lines) == self.index:
-			return ""
-		# return a line
-		ret = self.lines[self.index]
-		self.index += 1
-		return ret
+from StringIO import StringIO
 
 class TestSingleLines(unittest.TestCase):
 	# If run from testrunner.py, this is overridden with testrunner's
@@ -53,10 +34,8 @@ class TestSingleLines(unittest.TestCase):
 	# Run the linter on a single line.
 	# @return number of errors found
 	def _runParserOneLine(self, line):
-		lines = []
-		lines.append(line + "\n")
 		try:
-			num_errors = asmlint.run(BogusFile(lines), TestSingleLines.BogusOptions(self))
+			num_errors = asmlint.run(StringIO(line + '\n'), TestSingleLines.BogusOptions(self))
 		except (asmlint.ParseError, asmlint.FormatCheckError), e:
 			print "ASSERT FAILED!"
 			self.assert_(False)
