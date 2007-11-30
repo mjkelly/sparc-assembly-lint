@@ -479,16 +479,23 @@ def p_instruction(p):
 		       | regoptconst
 		       | oneregoraddr
 		       | oneortworeg'''
-	p[0] = plist(p)
+	#p[0] = plist(p)
+	p[0] = p[1]
 
 def p_noargs(p):
 	'''noargs : NOARGS'''
-	p[0] = plist(p)
+	#p[0] = plist(p)
+	p[0] = ast.Noargs()
 
 def p_ibranch(p):
-	'''ibranch : IBRANCH intexpr
-	           | IBRANCH COMMA A intexpr'''
-	p[0] = plist(p)
+	'''ibranch : IBRANCH intexpr'''
+	p[0] = ast.IBranch(p[2])
+
+def p_annulled_ibranch(p):
+	'''ibranch : IBRANCH COMMA A intexpr'''
+	#p[0] = plist(p)
+	#p[0] = ast.Instruction(p[3])
+	p[0] = ast.IBranch(p[4], annulled=True)
 
 def p_load(p):
 	'''load : LOAD address COMMA reg'''
