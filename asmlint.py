@@ -21,6 +21,17 @@ import ast
 
 parse_tree = []
 
+class ALOptionParser(OptionParser):
+	'''Make it easier to add boolean options (--foo and --no-foo).'''
+	def add_bool_option(self, name, dest, help_true, help_false):
+		'''Add a boolean command-line option. Parameters:
+			name: Command-line name of the flag.
+			dest: Name of the variable to store resultant boolean in.
+			help_true: Help description for true option.
+			help_false: Help description for false option.'''
+		self.add_option(  '--' + name, action="store_true",  dest=dest, help=help_true)
+		self.add_option('--no-' + name, action="store_false", dest=dest, help=help_false)
+
 def run(handle, opts):
 	'''Run the linter on a file handle.
 	@return the number of errors that occurred in the parse'''
@@ -32,7 +43,7 @@ def run(handle, opts):
 	except (ParseError, FormatCheckError), e:
 		print 'Error on line %d: %s' % (lineno, e)
 		other_error()
-
+	
 	parse_tree.append(subtree)
 
 	# re-read file checking line lengths.  We should figure out how to do
@@ -47,18 +58,18 @@ def run(handle, opts):
 
 def main(argv):
 
-	opt_parser = OptionParser(usage="%prog [OPTIONS] [FILENAME]")
+	opt_parser = ALOptionParser(usage="%prog [OPTIONS] [FILENAME]")
 
-	add_bool_option(opt_parser, 'check-line-length', 'check_line_length',
-		true_desc="Check line length.",
-		false_desc="Don't check line length. (Default)")
+	opt_parser.add_bool_option('check-line-length', dest='check_line_length',
+		help_true="Check line length.",
+		help_false="Don't check line length. (Default)")
 
 	opt_parser.add_option("--max-line-length", action="store", dest="max_line_length",
 		type="int", help="Maximum acceptable line length when --check-line-length is on.")
 
-	add_bool_option(opt_parser, 'check-registers', 'check_regs',
-		true_desc="Check for suspicious register names. (Default)",
-		false_desc="Don't check for suspicious register names.")
+	opt_parser.add_bool_option('check-registers', dest='check_regs',
+		help_true="Check for suspicious register names. (Default)",
+		help_false="Don't check for suspicious register names.")
 
 	opt_parser.add_option('-v', action="count", dest="verbosity", 
 		help="Increase verbosity of output.  Use multiple times to increase verbosity further.")
@@ -68,7 +79,8 @@ def main(argv):
 	opt_parser.set_defaults(max_line_length=80)
 	opt_parser.set_defaults(check_line_length=False)
 	opt_parser.set_defaults(check_regs=True)
-	opt_parser.set_defaults(verbosity=0)
+	# default is 1 for development
+	opt_parser.set_defaults(verbosity=1)
 
 	input_file = sys.stdin
 
@@ -95,12 +107,13 @@ def main(argv):
 		print "FINAL PARSE TREE:"
 		pp = pprint.PrettyPrinter(indent=2)
 		pp.pprint(parse_tree)
+
 		info("-----------------------------------------------------------------------------")
 		print "SYMBOL TABLE:"
 		print "Labels:"
 		pp.pprint(ast.Label.all_labels)
+
 		print "Macros:"
-		#pp.pprint(ast.Macro.all_macros)
 		for name in ast.Macro.all_macros:
 			m = ast.Macro.all_macros[name]
 			print "%s = %s" % (m, m.resolve())
@@ -117,11 +130,6 @@ def main(argv):
 		return 0
 	else:
 		return 1
-
-def add_bool_option(parser, opt_flag_name, opt_var_name, true_desc, false_desc):
-	'''optparse provides no easy way to handle full boolean flags, so here it is.'''
-	parser.add_option(  '--' + opt_flag_name, action="store_true",  dest=opt_var_name, help=true_desc)
-	parser.add_option('--no-' + opt_flag_name, action="store_false", dest=opt_var_name, help=false_desc)
 
 # -----------------------------------------------------------------------------
 # Entry point
