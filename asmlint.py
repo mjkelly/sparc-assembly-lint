@@ -46,26 +46,11 @@ def run(handle, opts):
 	
 	parse_tree.append(subtree)
 
-	# re-read file checking line lengths.  We should figure out how to do
-	# this in the parser.
-	handle.seek(0)
-	for lineno, line in enumerate(handle):
-		lineno = lineno + 1	# enumerate is 0 based
-		if opts.check_line_length and len(line.rstrip('\n')) > opts.max_line_length:
-			warn("%s:%d exceeds %d chars." % (handle.name, lineno, opts.max_line_length))
-
 	return get_num_errors()
 
 def main(argv):
 
 	opt_parser = ALOptionParser(usage="%prog [OPTIONS] [FILENAME]")
-
-	opt_parser.add_bool_option('check-line-length', dest='check_line_length',
-		help_true="Check line length.",
-		help_false="Don't check line length. (Default)")
-
-	opt_parser.add_option("--max-line-length", action="store", dest="max_line_length",
-		type="int", help="Maximum acceptable line length when --check-line-length is on.")
 
 	opt_parser.add_bool_option('check-registers', dest='check_regs',
 		help_true="Check for suspicious register names. (Default)",
@@ -76,8 +61,6 @@ def main(argv):
 	opt_parser.add_option("--quiet", action="store_true", dest="quiet", 
 		help="silence output")
 
-	opt_parser.set_defaults(max_line_length=80)
-	opt_parser.set_defaults(check_line_length=False)
 	opt_parser.set_defaults(check_regs=True)
 	# default is 1 for development
 	opt_parser.set_defaults(verbosity=1)
