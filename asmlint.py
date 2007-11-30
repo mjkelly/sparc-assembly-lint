@@ -29,7 +29,7 @@ class ALOptionParser(OptionParser):
 			dest: Name of the variable to store resultant boolean in.
 			help_true: Help description for true option.
 			help_false: Help description for false option.'''
-		self.add_option(  '--' + name, action="store_true",  dest=dest, help=help_true)
+		self.add_option('--' + name, action="store_true",  dest=dest, help=help_true)
 		self.add_option('--no-' + name, action="store_false", dest=dest, help=help_false)
 
 def run(handle, opts):

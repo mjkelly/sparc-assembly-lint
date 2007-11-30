@@ -45,10 +45,33 @@ class Id(ASTElement):
 		self.value = value
 	def __str__(self):
 		return "<Id:%s>" % self.value
+	
+	def is_macro(self):
+		'''Is there a macro declared with this Id's name?'''
+		return self.value in Macro.all_macros
+
+	def is_label(self):
+		'''Is there a label declared with this Id's name?'''
+		return self.value in Label.all_labels
+	
+	def get_macro(self):
+		'''Get the Macro with the same name as this Id, or None if there is no such Macro.'''
+		if self.is_macro():
+			return Macro.all_macros[self.value]
+		else:
+			return None
+
+	def get_label(self):
+		'''Get the Label with the same name as this Id, or None if there is no such Label.'''
+		if self.is_label():
+			return Label.all_labels[self.value]
+		else:
+			return None
+
 	def resolve(self):
 		#print "Resolving ID %s" % self
-		if self.value in Macro.all_macros:
-			r = Macro.all_macros[self.value].resolve()
+		if self.is_macro():
+			r = self.get_macro().resolve()
 			if isinstance(r, ASTElement):
 				return self
 			else:
@@ -140,6 +163,11 @@ class IntExpr(ASTElement):
 			# other things are just literal integers
 			else:
 				return self.left
+	
+	def is_literal(self):
+		'''Is this IntExpr a leaf node, i.e., composed solely of one
+		'left' object and no operator?'''
+		return (self.right is None) and (self.op is None)
 
 
 class BinaryOperator(ASTElement):
@@ -286,4 +314,31 @@ class Not(UnaryOperator):
 
 	def _do_resolve(self, arg):
 		return ~arg
+
+
+class Instruction(ASTElement):
+	def __init__(self, arglist=[]):
+		self.arglist = arglist
+
+	def __str__(self):
+		return "<Instruction: %s>" % self.arglist
+
+class Noargs(Instruction):
+	def __init__(self):
+		pass
+	def __str__(self):
+		return "<Noargs>"
+
+class IBranch(Instruction):
+	def __init__(self, target, annulled=False):
+		self.target = target.resolve()
+		self.annulled = annulled
+
+		if target.left.is_label():
+			print "Label already declared."
+		else:
+			print "No label yet."
+
+	def __str__(self):
+		return "<IBranch: %s [%s]>" % (self.target, self.annulled)
 
