@@ -90,18 +90,8 @@ def main(argv):
 		print "FINAL PARSE TREE:"
 		pp = pprint.PrettyPrinter(indent=2)
 		pp.pprint(parse_tree)
-
 		info("-----------------------------------------------------------------------------")
-		print "SYMBOL TABLE:"
-		print "Labels:"
-		pp.pprint(ast.Label.all_labels)
 
-		print "Macros:"
-		for name in ast.Macro.all_macros:
-			m = ast.Macro.all_macros[name]
-			print "%s = %s" % (m, m.resolve())
-
-	info("-----------------------------------------------------------------------------")
 	if num_errors > 0:
 		info("%d errors." % num_errors)
 

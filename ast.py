@@ -12,333 +12,172 @@
 
 import pprint
 
-class ASTElement:
-	'''Common methods for all AST elements. All AST classes should inherit from this.'''
+def getLineNumber(hash, className):
+	if hash.has_key('lineno'):
+		return hash['lineno']
+	else:
+		raise RuntimeError(
+			"Keyword 'lineno' not defined for %s" % className
+		)
 
-	def __init__(self, value):
-		'''The default ASTElement has only one value.'''
-		self.value = value
+class Node(object):
+	'''Common methods for all AST nodes. All AST classes should inherit from this.'''
+
+	def __init__(self, *children, **keywords):
+		'''Create a node with children.  Store the line number'''
+		self.children = children
+		self.lineno = getLineNumber(keywords, self.__class__.__name__)
+	
+        def getLine(self):
+                return self.lineno
+    
+        def __str__(self):
+                return "<%s:%s>" % (self.__class__.__name__, ':'.join(str(self.children)))
 
 	def __repr__(self):
 		'''pprint uses __repr__, not __str__, so make them the same.'''
 		return self.__str__()
 
-class Reg(ASTElement):
-	def __str__(self):
-		return "<Reg:%s>" % self.value
-
-class Label(ASTElement):
-	# Keep track of all labels by name.
-	all_labels = {}
-
-	def __init__(self, id):
-		'''@param id The Id object containing the label's name.'''
-		self.value = id.value
-		Label.all_labels[self.value] = self
-
-	def __str__(self):
-		return "<Label:%s>" % self.value
-
-class Id(ASTElement):
-	def __init__(self, value):
-		#print "NEW Id"
-		self.value = value
-	def __str__(self):
-		return "<Id:%s>" % self.value
-	
-	def is_macro(self):
-		'''Is there a macro declared with this Id's name?'''
-		return self.value in Macro.all_macros
-
-	def is_label(self):
-		'''Is there a label declared with this Id's name?'''
-		return self.value in Label.all_labels
-	
-	def get_macro(self):
-		'''Get the Macro with the same name as this Id, or None if there is no such Macro.'''
-		if self.is_macro():
-			return Macro.all_macros[self.value]
-		else:
-			return None
-
-	def get_label(self):
-		'''Get the Label with the same name as this Id, or None if there is no such Label.'''
-		if self.is_label():
-			return Label.all_labels[self.value]
-		else:
-			return None
-
-	def resolve(self):
-		#print "Resolving ID %s" % self
-		if self.is_macro():
-			r = self.get_macro().resolve()
-			if isinstance(r, ASTElement):
-				return self
-			else:
-				return r
-		else:
-			#print "Macro %s not found." % self.value
-			return self
-
-
-
-class Macro(ASTElement):
-	# Keep track of all macros by name.
-	all_macros = {}
-
-	def __init__(self, name, value):
+class MacroDeclaration(object):
+	def __init__(self, name, value, **keywords):
 		'''New Macro, "name=value".
 		@param name Id object containing the name of the macro.
 		@param value the value of the macro. Can be any type that has a resolve() method.'''
-		#print "NEW Macro"
-		self.name = name.value
+		self.name = name
 		self.value = value
-
-		# try to resolve anything that's not an int
-		self.value = self.value.resolve()
-
-		Macro.all_macros[self.name] = self
-		#print "MACRO: %s = %s" % (self.name, self.value)
+		self.lineno = getLineNumber(keywords, self.__class__.__name__)
 
 	def __str__(self):
-		return "<Macro:%s=%s>" % (self.name, self.value)
-	
-	def resolve(self):
-		if isinstance(self.value, ASTElement):
-			return self.value.resolve()
-		else:
-			return self.value
-	
-class IntExpr(ASTElement):
-	def __init__(self, left, op=None, right=None, sym=False):
-		#print "NEW IntExpr"
-		self.left = left
-		self.op = op
-		self.right = right
+		return "<%s:%s=%s>" % (self.__class__.__name__, self.name, self.value)
 
-		# if we're initialized with only one argument (which means a
-		# literal)
-		if (self.op is None) and (self.left is not None):
-			# if it's not a symbol, it must be a literal integer
-			if not sym:
-				self.left = int(self.left, 0)
-			# otherwise, interpret it as a symbol
-			else:
-				# we can only resolve things that have been
-				# defined. othewise we leave it as an Id object
-				# for later resolution.
-				self.left = self.left.resolve()
+	def __repr__(self):
+		'''pprint uses __repr__, not __str__, so make them the same.'''
+		return self.__str__()
+
+
+class NameContainer(object):
+	def __init__(self, name, **keywords):
+		self.name = name
+		self.lineno = getLineNumber(keywords, self.__class__.__name__)
+
+	def getName(self):
+		return self.name
 
 	def __str__(self):
-		if self.right is not None:
-			return "(%s %s %s)" % (self.left, self.op, self.right)
-		elif self.op is not None:
-			return "(%s %s)" % (self.op, self.left)
-		else:
-			return "%s" % self.left
-	
-	def resolve(self):
-		#print "Resolving IntExpr %s OP %s" % (self.left, self.right)
-		# binary operator
-		if self.right is not None:
-			#print "Resolving binary operator:"
-			r = self.op.resolve(self.left, self.right)
-			if isinstance(r, ASTElement):
-				return self
-			else:
-				return r
-		# unary operator
-		elif self.op is not None:
-			#print "Resolving unary operator:"
-			r = self.op.resolve(self.left)
-			if isinstance(r, ASTElement):
-				return self
-			else:
-				return r
-		# literal value
-		else:
-			# symbols (Id objects) must be resolved
-			if isinstance(self.left, ASTElement):
-				return self.left.resolve()
-			# other things are just literal integers
-			else:
-				return self.left
-	
-	def is_literal(self):
-		'''Is this IntExpr a leaf node, i.e., composed solely of one
-		'left' object and no operator?'''
-		return (self.right is None) and (self.op is None)
+		return "<%s:%s>" % (self.__class__.__name__, self.name)
 
+	def __repr__(self):
+		'''pprint uses __repr__, not __str__, so make them the same.'''
+		return self.__str__()
 
-class BinaryOperator(ASTElement):
-	def __init__(self):
-		pass
+class ValueContainer(object):
+	def __init__(self, value, **keywords):
+		self.value = value
+		self.lineno = getLineNumber(keywords, self.__class__.__name__)
+
+	def getValue(self):
+		return self.value
 
 	def __str__(self):
-		return "<UnknownBinOp>"
+		return "<%s:%s>" % (self.__class__.__name__, self.value)
 
-	def resolve(self, left, right):
-		# try to resolve each side first
-		l, r = left, right
-		if isinstance(left, ASTElement):
-			l = left.resolve()
-		if isinstance(right, ASTElement):
-			r = right.resolve()
-		
-		# check if either resolution failed
-		if isinstance(l, ASTElement) or isinstance(r, ASTElement):
-			return self
-		else:
-			return self._do_resolve(l, r)
-	
-	def from_str(str):
+	def __repr__(self):
+		'''pprint uses __repr__, not __str__, so make them the same.'''
+		return self.__str__()
+
+class Reg(NameContainer):
+	pass
+
+class LabelDeclaration(NameContainer):
+	pass
+
+class Id(NameContainer):
+	pass
+
+class Integer(ValueContainer):
+	pass
+
+class Char(ValueContainer):
+	pass
+
+class Statement(Node):
+	pass
+
+class BinaryExpression(Node):
+	def __init__(self, name, left, right, lineno=0):
+		Node.__init__(self, left, right, lineno=lineno)
+		self.__class__.__name__ = name
+
+	def from_str(name, left, right, lineno=0):
 		classes = {
-			'+': Plus,
-			'-': Minus,
-			'*': Mul,
-			'/': Div,
-			'%': Mod,
-			'^': Xor,
-			'<<': LShift,
-			'>>': RShift,
-			'&': And,
-			'|': Or,
+			'+': BinaryPlus,
+			'-': BinaryMinus,
+			'*': BinaryMul,
+			'/': BinaryDiv,
+			'%': BinaryMod,
+			'^': BinaryXor,
+			'<<': BinaryLShift,
+			'>>': BinaryRShift,
+			'&': BinaryAnd,
+			'|': BinaryOr,
 		}
-		return (classes[str])()
+		return (classes[name])(name, left, right, lineno=lineno)
 	
 	from_str = staticmethod(from_str)
 	
-class Plus(BinaryOperator):
-	def __str__(self):
-		return "+"
+class BinaryPlus(BinaryExpression):
+	pass
 
-	def _do_resolve(self, left, right):
-		return left + right
+class BinaryMinus(BinaryExpression):
+	pass
 
-class Minus(BinaryOperator):
-	def __str__(self):
-		return "-"
+class BinaryMul(BinaryExpression):
+	pass
 
-	def _do_resolve(self, left, right):
-		return left - right
+class BinaryDiv(BinaryExpression):
+	pass
 
-class Mul(BinaryOperator):
-	def __str__(self):
-		return "*"
+class BinaryMod(BinaryExpression):
+	pass
 
-	def _do_resolve(self, left, right):
-		return left * right
+class BinaryXor(BinaryExpression):
+	pass
 
-class Div(BinaryOperator):
-	def __str__(self):
-		return "/"
+class BinaryLShift(BinaryExpression):
+	pass
 
-	def _do_resolve(self, left, right):
-		return left / right
+class BinaryRShift(BinaryExpression):
+	pass
 
-class Mod(BinaryOperator):
-	def __str__(self):
-		return "%"
+class BinaryAnd(BinaryExpression):
+	pass
 
-	def _do_resolve(self, left, right):
-		return left % right
+class BinaryOr(BinaryExpression):
+	pass
 
-class Xor(BinaryOperator):
-	def __str__(self):
-		return "^"
+class UnaryExpression(Node):
+	def __init__(self, name, arg, lineno=0):
+		Node.__init__(self, arg, lineno=lineno)
+		self.__class__.__name__ = str(name)
 
-	def _do_resolve(self, left, right):
-		return left ^ right
-
-class LShift(BinaryOperator):
-	def __str__(self):
-		return "<<"
-
-	def _do_resolve(self, left, right):
-		return left << right
-
-class RShift(BinaryOperator):
-	def __str__(self):
-		return ">>"
-
-	def _do_resolve(self, left, right):
-		return left >> right
-
-class And(BinaryOperator):
-	def __str__(self):
-		return "&"
-
-	def _do_resolve(self, left, right):
-		return left & right
-
-class Or(BinaryOperator):
-	def __str__(self):
-		return "|"
-
-	def _do_resolve(self, left, right):
-		return left | right
-
-class UnaryOperator(ASTElement):
-	def __init__(self):
-		pass
-
-	def __str__(self):
-		return "<UnknownUnaryOp>"
-
-	def resolve(self, arg):
-		# if either side can't be resolved, we can't resolve
-		a = arg
-		if isinstance(arg, ASTElement):
-			a = arg.resolve()
-		return self._do_resolve(a)
-	
-	def from_str(str):
+	def from_str(name, arg, lineno=0):
 		classes = {
-			'-': UMinus,
-			'~': Not,
+			'-': UnaryMinus,
+			'~': UnaryNot,
 		}
-		return (classes[str])()
+		return (classes[name])(name, arg, lineno=lineno)
 	
 	from_str = staticmethod(from_str)
 
-class UMinus(UnaryOperator):
-	def __str__(self):
-		return "-"
+class UnaryMinus(UnaryExpression):
+	pass
 
-	def _do_resolve(self, arg):
-		return -arg
+class UnaryNot(UnaryExpression):
+	pass
 
-class Not(UnaryOperator):
-	def __str__(self):
-		return "~"
+class Branch(Node):
+	pass
 
-	def _do_resolve(self, arg):
-		return ~arg
-
-
-class Instruction(ASTElement):
-	def __init__(self, arglist=[]):
-		self.arglist = arglist
-
-	def __str__(self):
-		return "<Instruction: %s>" % self.arglist
-
-class Noargs(Instruction):
-	def __init__(self):
-		pass
-	def __str__(self):
-		return "<Noargs>"
-
-class IBranch(Instruction):
-	def __init__(self, target, annulled=False):
-		self.target = target.resolve()
-		self.annulled = annulled
-
-		if target.left.is_label():
-			print "Label already declared."
-		else:
-			print "No label yet."
-
-	def __str__(self):
-		return "<IBranch: %s [%s]>" % (self.target, self.annulled)
+class AnnulledBranch(Node):
+	pass
 
