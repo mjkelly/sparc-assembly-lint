@@ -25,14 +25,17 @@ class Node(object):
 
 	def __init__(self, *children, **keywords):
 		'''Create a node with children.  Store the line number'''
-		self.children = children
+		self.children = list(children)
 		self.lineno = getLineNumber(keywords, self.__class__.__name__)
 	
         def getLine(self):
                 return self.lineno
     
         def __str__(self):
-                return "<%s:%s>" % (self.__class__.__name__, ':'.join(str(self.children)))
+		strlist = []
+		for item in self.children:
+			strlist.append(str(item))
+                return "<%s:%s>" % (self.__class__.__name__, ':'.join(strlist))
 
 	def __repr__(self):
 		'''pprint uses __repr__, not __str__, so make them the same.'''

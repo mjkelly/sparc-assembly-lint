@@ -671,7 +671,7 @@ def p_intexpr_char(p):
 
 def p_intexpr_id(p):
 	'''intexpr : id'''
-	p[0] = ast.Id(p[1], lineno=p.lineno(1))
+	p[0] = p[1]
 
 def p_intexpr_parens(p):
 	'''intexpr : LPAREN intexpr RPAREN'''
