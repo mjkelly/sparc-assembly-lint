@@ -17,8 +17,7 @@ def getLineNumber(hash, className):
 		return hash['lineno']
 	else:
 		raise RuntimeError(
-			"[Internal Error] Keyword 'lineno' not defined for %s" % className
-		)
+			"[Internal Error] Keyword 'lineno' not defined for %s" % className)
 
 class Node(object):
 	'''Common methods for all AST nodes. All AST classes should inherit from this.'''
@@ -32,9 +31,7 @@ class Node(object):
                 return self.lineno
     
         def __str__(self):
-		strlist = []
-		for item in self.children:
-			strlist.append(str(item))
+		strlist = map(str, self.children)
                 return "<%s:%s>" % (self.__class__.__name__, ':'.join(strlist))
 
 	def __repr__(self):
