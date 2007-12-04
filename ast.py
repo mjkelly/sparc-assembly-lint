@@ -17,7 +17,7 @@ def getLineNumber(hash, className):
 		return hash['lineno']
 	else:
 		raise RuntimeError(
-			"Keyword 'lineno' not defined for %s" % className
+			"[Internal Error] Keyword 'lineno' not defined for %s" % className
 		)
 
 class Node(object):

@@ -19,7 +19,10 @@ from asm_parser import yacc, debug, warn, info, get_num_errors, \
 	ParseError, FormatCheckError
 import ast
 
-parse_tree = []
+class ParseResult(object):
+	def __init__(self, parse_tree, num_errors):
+		self.parse_tree = parse_tree
+		self.num_errors = num_errors
 
 class ALOptionParser(OptionParser):
 	'''Make it easier to add boolean options (--foo and --no-foo).'''
@@ -38,16 +41,16 @@ def run(handle, opts):
 	lineno = 0
 	init_parser(opts)
 
+	parse_tree = None
+
 	try:
-		subtree = yacc.parse(handle.read(), tracking=True)
+		parse_tree = yacc.parse(handle.read(), tracking=True)
 	except (ParseError, FormatCheckError), e:
 		print 'Error on line %d: %s' % (lineno, e)
 		other_error()
+
+	return ParseResult(parse_tree, get_num_errors())
 	
-	parse_tree.append(subtree)
-
-	return get_num_errors()
-
 def main(argv):
 
 	opt_parser = ALOptionParser(usage="%prog [OPTIONS] [FILENAME]")
@@ -79,7 +82,10 @@ def main(argv):
 		input_filename = args[0]
 		input_file = open(input_filename, 'r')
 	
-	num_errors = run(input_file, opts)
+	result = run(input_file, opts)
+
+	num_errors = result.num_errors
+	parse_tree = result.parse_tree
 
 	if input_file != sys.stdin:
 		input_file.close()

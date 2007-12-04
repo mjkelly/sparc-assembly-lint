@@ -35,17 +35,21 @@ class TestSingleLines(unittest.TestCase):
 	# @return number of errors found
 	def _runParserOneLine(self, line):
 		try:
-			num_errors = asmlint.run(StringIO(line + '\n'), TestSingleLines.BogusOptions(self))
+			result = asmlint.run(StringIO(line + '\n'), TestSingleLines.BogusOptions(self))
 		except (asmlint.ParseError, asmlint.FormatCheckError), e:
 			print "ASSERT FAILED!", e
 			self.assert_(False)
-		return num_errors
+		return result
 
 	def _runGood(self, line):
-		self.assert_(self._runParserOneLine(line) == 0)
+		result = self._runParserOneLine(line)
+		self.assert_(result.num_errors == 0)
+		return result
 
 	def _runBad(self, line):
-		self.assert_(self._runParserOneLine(line) != 0)
+		result = self._runParserOneLine(line)
+		self.assert_(result.num_errors != 0)
+		return result
 
 	def testCommand(self):
 		self._runGood('add     %o0, 10, %l0')

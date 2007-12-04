@@ -425,7 +425,7 @@ def t_error(t):
 
 def p_file(p):
 	'''file : lines'''
-	p[0] = plist(p)
+	p[0] = p[1]
 
 def p_lines(p):
 	'''lines : line NEWLINE
@@ -491,7 +491,6 @@ def p_ibranch(p):
 
 def p_annulled_ibranch(p):
 	'''branch : BRANCH COMMA A intexpr'''
-	#p[0] = plist(p)
 	p[0] = ast.AnnulledBranch(p[4], lineno=p.lineno(1))
 
 def p_load(p):
@@ -658,7 +657,6 @@ def p_macro(p):
 	         | id EQUALS STRING'''
 	p[0] = ast.MacroDeclaration(p[1], p[3], lineno=p.lineno(1))
 	#print "Value of macro is: %s" % p[3].resolve()
-
 
 def p_intexpr_int(p):
 	'''intexpr : INT'''
