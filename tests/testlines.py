@@ -14,6 +14,7 @@ import asmlint
 from optparse import OptionParser, OptionGroup
 import unittest
 from StringIO import StringIO
+import ast
 
 class TestSingleLines(unittest.TestCase):
 	# If run from testrunner.py, this is overridden with testrunner's
@@ -75,16 +76,22 @@ class TestSingleLines(unittest.TestCase):
 		self._runGood('! line comment')
 		self._runGood('/* block comment */')
 	
-	def testVarAssignment(self):
-		self._runGood('MYINT=10')
+	def testMacroAssignment(self):
+		result = self._runGood('MYINT=0xA')
+		macro = result.parse_tree[0]
+		self.assert_(type(macro),ast.MacroDeclaration) 
+		self.assert_(macro.name == 'MYINT') 
+		integer = macro.value
+		self.assert_(type(integer) == ast.Integer)
+		self.assert_(integer.value == 0xA)
 	
-	def testVarAssignmentToHex(self):
+	def testMacroAssignmentToHex(self):
 		self._runGood('A=0x41')
 
-	def testVarAssignmentToSymbol(self):
+	def testMacroAssignmentToSymbol(self):
 		self._runGood('X=label')
 
-	def testVarAssignmentReservedWord(self):
+	def testMacroAssignmentReservedWord(self):
 		self._runGood('mov=10')
 		self._runGood('a=10')
 	

@@ -98,12 +98,22 @@ class Id(NameContainer):
 	pass
 
 class Integer(ValueContainer):
+	def __init__(self, value, **keywords):
+		base = 10
+		if value.startswith('0x'):
+			base = 16
+		elif value.startswith('0'):
+			base = 8
+		ValueContainer.__init__(self, int(value, base), **keywords)
 	pass
 
 class Char(ValueContainer):
 	pass
 
-class Statement(Node):
+class Comment(Node):
+	pass
+
+class Instruction(Node):
 	pass
 
 class BinaryExpression(Node):

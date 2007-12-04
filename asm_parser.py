@@ -69,10 +69,19 @@ def plist(p):
 	ret_list = [func_name(2)]
 	for item in p[1:]:
 		ret_list.append(item)
-	pp = pprint.PrettyPrinter(indent=2)
 	if opts.verbosity >= 2:
+		pp = pprint.PrettyPrinter(indent=2)
 		pp.pprint(ret_list)
 	return ret_list
+
+def flatlist(p):
+	vals = []
+	for item in p[1:]:
+		if type(item) == list:
+			vals.extend(item)
+		else:
+			vals.append(item)
+	return vals
 
 def lex_error():
 	'''Register a lex error.'''
@@ -430,26 +439,31 @@ def p_file(p):
 def p_lines(p):
 	'''lines : line NEWLINE
 		| line NEWLINE lines'''
-	p[0] = plist(p)
+	if len(p) == 3:
+		p[0] = p[1]
+	else:
+		p[1].extend(p[3])
+		p[0] = p[1]
+	
 
 def p_line(p):
 	'''line : 
 	        | comment 
 	        | statementlist 
 		| statementlist comment'''
-	p[0] = plist(p)
-
+	p[0] = flatlist(p)
+		
 def p_statementlist(p):
 	'''statementlist : statement
 	                 | statementlist SEMI statement'''
-	p[0] = plist(p)
+	p[0] = flatlist(p)
 
 def p_statement(p):
 	'''statement : label
 	             | instruction
 		     | label instruction
 		     | macro'''
-	p[0] = plist(p)
+	p[0] = flatlist(p)
 
 def p_instruction(p):
 	'''instruction : noargs
@@ -479,7 +493,14 @@ def p_instruction(p):
 		       | regoptconst
 		       | oneregoraddr
 		       | oneortworeg'''
-	p[0] = p[1]
+	if type(p[1]) == list:	# plist
+		# Pull off the first argument of the plist and create an
+		# instruction from it
+		args = p[1][1:]
+		kwargs = { 'lineno' : p.lineno(1) }
+		p[0] = ast.Instruction(*args, **kwargs)
+	else:
+		p[0] = p[1]
 
 def p_noargs(p):
 	'''noargs : NOARGS'''
@@ -655,8 +676,7 @@ def p_label(p):
 def p_macro(p):
 	'''macro : id EQUALS intexpr
 	         | id EQUALS STRING'''
-	p[0] = ast.MacroDeclaration(p[1], p[3], lineno=p.lineno(1))
-	#print "Value of macro is: %s" % p[3].resolve()
+	p[0] = ast.MacroDeclaration(p[1].name, p[3], lineno=p.lineno(1))
 
 def p_intexpr_int(p):
 	'''intexpr : INT'''
@@ -736,7 +756,7 @@ def p_id(p):
 def p_comment(p):
 	'''comment : LINECOMMENT
 	           | BLOCKCOMMENT'''
-	p[0] = plist(p)
+	p[0] = ast.Comment(p[1], lineno=p.lineno(1))
 
 def p_error(p):
 	if p is None:
