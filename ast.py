@@ -38,7 +38,7 @@ class Node(object):
 		'''pprint uses __repr__, not __str__, so make them the same.'''
 		return self.__str__()
 
-class MacroDeclaration(object):
+class MacroDeclaration(Node):
 	def __init__(self, name, value, **keywords):
 		'''New Macro, "name=value".
 		@param name Id object containing the name of the macro.
@@ -50,21 +50,13 @@ class MacroDeclaration(object):
 	def __str__(self):
 		return "<%s:%s=%s>" % (self.__class__.__name__, self.name, self.value)
 
-	def __repr__(self):
-		'''pprint uses __repr__, not __str__, so make them the same.'''
-		return self.__str__()
-
-class SingletonContainer(object):
+class SingletonContainer(Node):
 	def __init__(self, value, **keywords):
 		self.value = value
 		self.lineno = getLineNumber(keywords, self.__class__.__name__)
 
 	def __str__(self):
 		return "<%s:%s>" % (self.__class__.__name__, self.value)
-
-	def __repr__(self):
-		'''pprint uses __repr__, not __str__, so make them the same.'''
-		return self.__str__()
 
 class NameContainer(SingletonContainer):
 	def getName(self):
