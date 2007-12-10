@@ -54,29 +54,10 @@ class MacroDeclaration(object):
 		'''pprint uses __repr__, not __str__, so make them the same.'''
 		return self.__str__()
 
-
-class NameContainer(object):
-	def __init__(self, name, **keywords):
-		self.name = name
-		self.lineno = getLineNumber(keywords, self.__class__.__name__)
-
-	def getName(self):
-		return self.name
-
-	def __str__(self):
-		return "<%s:%s>" % (self.__class__.__name__, self.name)
-
-	def __repr__(self):
-		'''pprint uses __repr__, not __str__, so make them the same.'''
-		return self.__str__()
-
-class ValueContainer(object):
+class SingletonContainer(object):
 	def __init__(self, value, **keywords):
 		self.value = value
 		self.lineno = getLineNumber(keywords, self.__class__.__name__)
-
-	def getValue(self):
-		return self.value
 
 	def __str__(self):
 		return "<%s:%s>" % (self.__class__.__name__, self.value)
@@ -84,6 +65,14 @@ class ValueContainer(object):
 	def __repr__(self):
 		'''pprint uses __repr__, not __str__, so make them the same.'''
 		return self.__str__()
+
+class NameContainer(SingletonContainer):
+	def getName(self):
+		return self.value
+
+class ValueContainer(SingletonContainer):
+	def getValue(self):
+		return self.value
 
 class Reg(NameContainer):
 	pass
@@ -108,9 +97,6 @@ class Char(ValueContainer):
 	pass
 
 class Comment(Node):
-	pass
-
-class Instruction(Node):
 	pass
 
 class BinaryExpression(Node):
@@ -185,9 +171,14 @@ class UnaryMinus(UnaryExpression):
 class UnaryNot(UnaryExpression):
 	pass
 
+class Save(Node):
+	pass
+
 class Branch(Node):
 	pass
 
 class AnnulledBranch(Node):
 	pass
 
+class Instruction(Node):
+	pass

@@ -556,7 +556,10 @@ def p_cmp(p):
 def p_format3(p):
 	'''format3 : FORMAT3 reg COMMA reg COMMA reg
 	           | FORMAT3 reg COMMA intexpr COMMA reg'''
-	p[0] = plist(p)
+	if p[1] == 'save':
+		p[0] = ast.Save(p[2], p[4], p[6], lineno=p.lineno(1))
+	else:
+		p[0] = plist(p)
 
 def p_oneint(p):
 	'''oneint : ONEINT intexpr'''
@@ -676,7 +679,7 @@ def p_label(p):
 def p_macro(p):
 	'''macro : id EQUALS intexpr
 	         | id EQUALS STRING'''
-	p[0] = ast.MacroDeclaration(p[1].name, p[3], lineno=p.lineno(1))
+	p[0] = ast.MacroDeclaration(p[1].getName(), p[3], lineno=p.lineno(1))
 
 def p_intexpr_int(p):
 	'''intexpr : INT'''

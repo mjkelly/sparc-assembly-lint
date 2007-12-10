@@ -34,21 +34,22 @@ class TestSingleLines(unittest.TestCase):
 
 	# Run the linter on a single line.
 	# @return number of errors found
-	def _runParserOneLine(self, line):
+	def _runParserOneLine(self, *lines):
 		try:
-			result = asmlint.run(StringIO(line + '\n'), TestSingleLines.BogusOptions(self))
+			input = '\n'.join(list(lines)) + '\n'
+			result = asmlint.run(StringIO( input ), TestSingleLines.BogusOptions(self))
 		except (asmlint.ParseError, asmlint.FormatCheckError), e:
 			print "ASSERT FAILED!", e
 			self.assert_(False)
 		return result
 
-	def _runGood(self, line):
-		result = self._runParserOneLine(line)
+	def _runGood(self, *lines):
+		result = self._runParserOneLine(*lines)
 		self.assert_(result.num_errors == 0)
 		return result
 
-	def _runBad(self, line):
-		result = self._runParserOneLine(line)
+	def _runBad(self, *lines):
+		result = self._runParserOneLine(*lines)
 		self.assert_(result.num_errors != 0)
 		return result
 
