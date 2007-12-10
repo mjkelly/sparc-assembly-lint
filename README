@@ -6,7 +6,6 @@ Errors to catch:
 - strange registers (including %lo)
 - mention broken gcc behavior on labels without leading .L?
 - no label with same name as filename
-- check alignment
 - check for correct .section (.data for .word, etc, .section for instrs)
 - check for .global
 - set (or other multi-instruction pseudo-ops) in delay slot
@@ -16,6 +15,16 @@ Errors to catch:
 - not %l0, %i2, %l0 <-- SEGFAULT on gcc
 - SAVE OFFSETS! SAVE OFFSETS! SAVE OFFSETS!
 - bogus .section names (make sure to catch: .section ."text"; .section .text; etc)
+- Check alignment...
+  This works:
+	fmt: .asciz "x = %x\n"
+	.align 4
+	x: .word 5
+  This doesn't:
+	.align 4
+	fmt: .asciz "x = %x\n"
+	x: .word 5
+  .aligns are tricky!
 
 TODO:
 Build abstract syntax tree
