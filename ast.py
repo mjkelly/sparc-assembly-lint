@@ -19,6 +19,7 @@ def getLineNumber(hash, className):
 		raise RuntimeError(
 			"[Internal Error] Keyword 'lineno' not defined for %s" % className)
 
+
 class Node(object):
 	'''Common methods for all AST nodes. All AST classes should inherit from this.'''
 
@@ -29,7 +30,10 @@ class Node(object):
 	
         def getLine(self):
                 return self.lineno
-    
+	
+	def reduce(self):
+		return self
+	
         def __str__(self):
 		strlist = map(str, self.children)
                 return "<%s:%s>" % (self.__class__.__name__, ':'.join(strlist))
@@ -46,6 +50,9 @@ class MacroDeclaration(Node):
 		self.name = name
 		self.value = value
 		self.lineno = getLineNumber(keywords, self.__class__.__name__)
+
+	def reduce(self):
+		return MacroDeclaration(self.name, self.value.reduce(), lineno=self.lineno)
 
 	def __str__(self):
 		return "<%s:%s=%s>" % (self.__class__.__name__, self.name, self.value)
@@ -78,11 +85,14 @@ class Id(NameContainer):
 class Integer(ValueContainer):
 	def __init__(self, value, **keywords):
 		base = 10
-		if value.startswith('0x'):
-			base = 16
-		elif value.startswith('0'):
-			base = 8
-		ValueContainer.__init__(self, int(value, base), **keywords)
+		if isinstance(value, str):
+			if value.startswith('0x'):
+				base = 16
+			elif value.startswith('0'):
+				base = 8
+			ValueContainer.__init__(self, int(value, base), **keywords)
+		else:
+			ValueContainer.__init__(self, value, **keywords)
 	pass
 
 class Char(ValueContainer):
@@ -95,6 +105,16 @@ class BinaryExpression(Node):
 	def __init__(self, name, left, right, lineno=0):
 		Node.__init__(self, left, right, lineno=lineno)
 		self.__class__.__name__ = name
+	
+	def reduce(self):
+		left  = self.children[0].reduce()
+		right = self.children[1].reduce()
+		
+		if isinstance(left, ValueContainer) and isinstance(right, ValueContainer):
+			op = self.__class__.__name__
+			val = eval(str(left.value) + str(op) + str(right.value))	# blatent cheating
+			return Integer(val, lineno=self.lineno)
+		return self
 
 	def from_str(name, left, right, lineno=0):
 		classes = {

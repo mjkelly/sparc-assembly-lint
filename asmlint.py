@@ -19,6 +19,8 @@ from asm_parser import yacc, debug, warn, info, get_num_errors, \
 	ParseError, FormatCheckError
 import ast
 
+lastResult = None
+
 class ParseResult(object):
 	def __init__(self, parse_tree, num_errors):
 		self.parse_tree = parse_tree
@@ -48,8 +50,10 @@ def run(handle, opts):
 	except (ParseError, FormatCheckError), e:
 		print 'Error on line %d: %s' % (lineno, e)
 		other_error()
-
-	return ParseResult(parse_tree, get_num_errors())
+	
+	global lastResult
+	lastResult = ParseResult(parse_tree, get_num_errors())
+	return lastResult
 	
 def main(argv):
 

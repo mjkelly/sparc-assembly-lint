@@ -688,7 +688,7 @@ def p_intexpr_int(p):
 def p_intexpr_char(p):
 	'''intexpr : CHAR'''
 	# Yeah, I know this is cheating.
-	p[0] = ast.Char(str(ord(eval(p[1]))), lineno=p.lineno(1))
+	p[0] = ast.Char(ord(eval(p[1])), lineno=p.lineno(1))
 
 def p_intexpr_id(p):
 	'''intexpr : id'''

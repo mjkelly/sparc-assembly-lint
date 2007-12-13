@@ -96,6 +96,14 @@ class TestSingleLines(unittest.TestCase):
 		self._runGood('mov=10')
 		self._runGood('a=10')
 	
+	def testIntegerAddition(self):
+		result = self._runGood("M1='a' + 32*3 - 128/2 >> 2")
+		macro = result.parse_tree[0]
+		reduced = macro.reduce()
+		self.assert_(type(reduced) == ast.MacroDeclaration)
+		integer = reduced.value
+		self.assert_(integer.value == 32)
+	
 	def testOneRegisterLoad(self):
 		self._runGood('ld      [%i0], %l0')
 
