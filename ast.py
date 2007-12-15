@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -----------------------------------------------------------------
 # ast.py -- Abstract syntax tree for asmlint.
-# Copyright 2007 Michael Kelly (michael@michaelkelly.org)
+# Copyright 2007 Michael Kelly, David Lindquist
 #
 # This program is released under the terms of the GNU General Public
 # License as published by the Free Software Foundation; either version 2

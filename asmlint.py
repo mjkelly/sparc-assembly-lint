@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -----------------------------------------------------------------
 # asmlint.py -- Find common errors in SPARC assembly files.
-# Copyright 2007 Michael Kelly (michael@michaelkelly.org)
+# Copyright 2007 Michael Kelly, David Lindquist
 #
 # This program is released under the terms of the GNU General Public
 # License as published by the Free Software Foundation; either version 2
