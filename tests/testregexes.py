@@ -20,6 +20,8 @@ class TestRegexes(unittest.TestCase):
 	# If run from testrunner.py, this is overridden with testrunner's
 	# value. (testrunner ALWAYS sets it.)
 	verbosity = -1
+	# Whether to run tests that test nonexistant or future functionality.
+	run_unstable = False
 
 	def _regex_tester(self, regex, matches, nonmatches):
 		"""Test a given regex against a series of positive matches and

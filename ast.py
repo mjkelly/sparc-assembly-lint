@@ -107,7 +107,7 @@ class BinaryExpression(Node):
 		
 		if isinstance(left, ValueContainer) and isinstance(right, ValueContainer):
 			op = self.__class__.__name__
-			val = eval(str(left.value) + str(op) + str(right.value))	# blatent cheating
+			val = eval(str(left.value) + str(op) + str(right.value))	# blatant cheating
 			return Integer(val, lineno=self.lineno)
 		return self
 
@@ -167,6 +167,8 @@ class UnaryExpression(Node):
 		classes = {
 			'-': UnaryMinus,
 			'~': UnaryNot,
+			'%lo': UnaryLo,
+			'%hi': UnaryHi,
 		}
 		return (classes[name])(name, arg, lineno=lineno)
 	
@@ -176,6 +178,12 @@ class UnaryMinus(UnaryExpression):
 	pass
 
 class UnaryNot(UnaryExpression):
+	pass
+
+class UnaryHi(UnaryExpression):
+	pass
+
+class UnaryLo(UnaryExpression):
 	pass
 
 class Save(Node):

@@ -10,24 +10,36 @@
 # Sun Aug 12 03:01:03 PDT 2007
 # -----------------------------------------------------------------
 
-import asmlint
+import sys
 from optparse import OptionParser, OptionGroup
-import unittest
 from StringIO import StringIO
+
+import asmlint
+import unittest
 import ast
+
+def unstable(f):
+	'''Decorator to mark a test function as unstable, which will not be run
+	   unless TestSingleLines.run_unstable is true.'''
+	def inner(self,*args, **kwargs):
+		if self.run_unstable:
+			return f(self, *args, **kwargs)
+		else:
+			print >> sys.stderr, "[SKIPPNG UNSTABLE TEST] ",
+	return inner
 
 class TestSingleLines(unittest.TestCase):
 	# If run from testrunner.py, this is overridden with testrunner's
 	# value. (testrunner ALWAYS sets it.)
 	verbosity = -1
+	# Whether to run tests that test nonexistant or future functionality.
+	run_unstable = False
 
 	class BogusOptions:
 		'''This is a slightly ugly way of passing our custom options to
 		the test parser.'''
 		verbosity = None
 		check_regs = True
-		check_line_length = True
-		max_line_length = 80
 
 		def __init__(self, container):
 			verbosity = container.verbosity
@@ -134,6 +146,9 @@ class TestSingleLines(unittest.TestCase):
 
 	def testMovChar(self):
 		self._runGood("mov     '*', %l3")
+
+	def testEscapedChar(self):
+		self._runGood(r"mov	'\n', %l0")
 	
 	def testSectionData(self):
 		self._runGood('.section	".data"')
@@ -210,6 +225,10 @@ class TestSingleLines(unittest.TestCase):
 		self._runGood('not	%l0, %l1')
 		self._runGood('clr	[%l0]')
 		self._runGood('dec	42, %l1')
+	
+	def testEmptyString(self):
+		self._runGood('')
+	
 
 if __name__ == '__main__':
 	unittest.main()
