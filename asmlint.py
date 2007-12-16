@@ -63,14 +63,13 @@ def main(argv):
 		help_true="Check for suspicious register names. (Default)",
 		help_false="Don't check for suspicious register names.")
 
-	opt_parser.add_option('-v', action="count", dest="verbosity", 
+	opt_parser.add_option('-v', '--verbose', action="count", dest="verbosity", 
 		help="Increase verbosity of output.  Use multiple times to increase verbosity further.")
-	opt_parser.add_option("--quiet", action="store_true", dest="quiet", 
-		help="silence output")
+	opt_parser.add_option('-q', '--quiet', action="store_true", dest="quiet", 
+		help="Silence output.")
 
 	opt_parser.set_defaults(check_regs=True)
-	# default is 1 for development
-	opt_parser.set_defaults(verbosity=1)
+	opt_parser.set_defaults(verbosity=0)
 
 	input_file = sys.stdin
 

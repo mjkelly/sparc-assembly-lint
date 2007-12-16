@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -----------------------------------------------------------------------------
 # symbols.py -- List of reserved words in SPARC assembly.
 # Copyright 2007 Michael Kelly (michael@michaelkelly.org)

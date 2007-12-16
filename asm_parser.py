@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -----------------------------------------------------------------------------
 # asm_parser.py -- Parse SPARC assembly files.
 # Copyright 2007 Michael Kelly, David Lindquist
@@ -40,7 +39,7 @@ def warn(msg):
 	warnings += 1	
 
 def debug(msg):
-	if opts.verbosity >= 1:
+	if opts.verbosity >= 2:
 		log('DEBUG', msg)
 
 def info(msg):

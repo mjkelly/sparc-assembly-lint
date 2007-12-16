@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -----------------------------------------------------------------
 # ast.py -- Abstract syntax tree for asmlint.
 # Copyright 2007 Michael Kelly, David Lindquist
@@ -84,13 +83,9 @@ class Id(NameContainer):
 
 class Integer(ValueContainer):
 	def __init__(self, value, **keywords):
-		base = 10
 		if isinstance(value, str):
-			if value.startswith('0x'):
-				base = 16
-			elif value.startswith('0'):
-				base = 8
-			ValueContainer.__init__(self, int(value, base), **keywords)
+			# base=0 auto-detects base
+			ValueContainer.__init__(self, int(value, 0), **keywords)
 		else:
 			ValueContainer.__init__(self, value, **keywords)
 	pass
