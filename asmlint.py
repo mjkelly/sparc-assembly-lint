@@ -45,8 +45,12 @@ def run(handle, opts):
 
 	parse_tree = None
 
+	input = handle.read()
+	if not input:
+		warn('Empty input')
+		input = ' '
 	try:
-		parse_tree = yacc.parse(handle.read(), tracking=True)
+		parse_tree = yacc.parse(input, tracking=True)
 	except (ParseError, FormatCheckError), e:
 		print 'Error on line %d: %s' % (lineno, e)
 		other_error()

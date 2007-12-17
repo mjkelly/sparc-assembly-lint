@@ -436,12 +436,12 @@ def p_file(p):
 	p[0] = p[1]
 
 def p_lines(p):
-	'''lines : line NEWLINE
+	'''lines : line
 		| line NEWLINE lines'''
-	if len(p) == 3:
+	if len(p) == 2:
 		p[0] = p[1]
 	else:
-		p[1].extend(p[3])
+		p[1] += p[3]
 		p[0] = p[1]
 	
 
@@ -760,17 +760,27 @@ def p_comment(p):
 	           | BLOCKCOMMENT'''
 	p[0] = ast.Comment(p[1], lineno=p.lineno(1))
 
-def p_error(p):
-	if p is None:
+def p_error(token):
+	if token is None:
 		val = "<NO TOKEN>";
 	else:
-		val = "'%s' (%s) on line %d" % (p.value, p.type, p.lineno)
-	error("Syntax error at token %s. Discarding..." % (val))
+		val = "'%s' (%s) on line %d" % (token.value, token.type, token.lineno)
+	error("Syntax error at token %s. Discarding rest of line..." % (val))
 	yacc_error()
+
+	if token is None:
+		yacc.restart()
+		return None
 
 	while True:
 		tok = yacc.token()
-		if not tok:
-			yacc.restart()
+		debug('Reading token %s' % tok)
+		if tok is None:
+			debug('tok was none')
+			yacc.errok()
+			return tok
+		elif tok.type == 'NEWLINE':
+			debug('tok is newline')
+			yacc.errok()
 			return tok
 

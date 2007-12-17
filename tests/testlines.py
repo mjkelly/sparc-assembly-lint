@@ -48,7 +48,7 @@ class TestSingleLines(unittest.TestCase):
 	# @return number of errors found
 	def _runParserOneLine(self, *lines):
 		try:
-			input = '\n'.join(list(lines)) + '\n'
+			input = '\n'.join(list(lines))
 			result = asmlint.run(StringIO( input ), TestSingleLines.BogusOptions(self))
 		except (asmlint.ParseError, asmlint.FormatCheckError), e:
 			print "ASSERT FAILED!", e
@@ -108,7 +108,7 @@ class TestSingleLines(unittest.TestCase):
 		self._runGood('mov=10')
 		self._runGood('a=10')
 	
-	def testIntegerAddition(self):
+	def testIntegerOperators(self):
 		result = self._runGood("M1='a' + 32*3 - 128/2 >> 2")
 		macro = result.parse_tree[0]
 		reduced = macro.reduce()
@@ -198,6 +198,10 @@ class TestSingleLines(unittest.TestCase):
 
 	def testBadCall(self):
 		self._runBad('call	printf, 1, 2')
+
+	def testBadCallAndInstruction(self):
+		self._runBad('call	printf, 1, 2',
+				'mov	%l1, %l2')
 	
 	def testBadReg1(self):
 		self._runBad('add	10, %l8, %l0')
