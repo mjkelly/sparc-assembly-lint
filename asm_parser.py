@@ -67,7 +67,8 @@ def plist(p):
 		@param p list of entities on the right side of a production.'''
 	ret_list = [func_name(2)]
 	for item in p[1:]:
-		ret_list.append(item)
+		if item not in plist_ignore_tokens:
+			ret_list.append(item)
 	if opts.verbosity >= 2:
 		pp = pprint.PrettyPrinter(indent=2)
 		pp.pprint(ret_list)
@@ -223,8 +224,11 @@ precedence = (
 	('right', 'NOT', 'LO', 'HI'),
 )
 
-labels = {}
-macros = {}
+# These tokens are ignored by plist() because they're leftover syntactic
+# elements that have no real meaning.
+plist_ignore_tokens = (
+	',',
+)
 
 id_regex         = r'\.?[a-zA-Z_$\.][a-zA-Z_$\.0-9]*'
 int_regex        = r'-?((0x[0-9a-fA-F]+)|([0-9]+))'
@@ -526,7 +530,10 @@ def p_address(p):
 	           | LBRACKET reg PLUS intexpr RBRACKET
 	           | LBRACKET reg MINUS intexpr RBRACKET
 	           | LBRACKET reg PLUS reg RBRACKET'''
-	p[0] = plist(p)
+	if len(p) == 4: # no offset
+		p[0] = ast.Address(p[2], lineno=p.lineno(1))
+	else:
+		p[0] = ast.Address(p[2], p[3], p[4], lineno=p.lineno(1))
 
 def p_restore(p):
 	'''restore : RESTORE
@@ -565,40 +572,49 @@ def p_oneint(p):
 	p[0] = plist(p)
 
 def p_onestring(p):
-	'''onestring : ONESTRING STRING'''
+	'''onestring : ONESTRING string'''
 	p[0] = plist(p)
 
 def p_stringlist(p):
 	'''stringlist : STRINGLIST stringlistarg'''
-	p[0] = plist(p)
+	p[0] = plist(p[0:2] + p[2])
 
 def p_stringlistarg(p):
-	'''stringlistarg : STRING
-	                 | STRING COMMA stringlistarg'''
-	p[0] = plist(p)
+	'''stringlistarg : string
+	                 | string COMMA stringlistarg'''
+	if len(p) == 2:
+		p[0] = [p[1]]
+	else:
+		p[0] = [p[1]] + p[3]
 
 def p_intlist(p):
 	'''intlist : INTLIST intlistarg'''
-	p[0] = plist(p)
+	p[0] = plist(p[0:2] + p[2])
 
 def p_intlistarg(p):
 	'''intlistarg : intexpr
 	              | intexpr COMMA intlistarg'''
-	p[0] = plist(p)
+	if len(p) == 2:
+		p[0] = [p[1]]
+	else:
+		p[0] = [p[1]] + p[3]
 
 def p_floatlist(p):
 	'''floatlist : FLOATLIST floatlistarg'''
-	p[0] = plist(p)
+	p[0] = plist(p[0:2] + p[2])
 
 def p_floatlistarg(p):
-	'''floatlistarg : FLOAT
-	                | FLOAT COMMA floatlistarg'''
-	p[0] = plist(p)
+	'''floatlistarg : float
+	                | float COMMA floatlistarg'''
+	if len(p) == 2:
+		p[0] = [p[1]]
+	else:
+		p[0] = [p[1]] + p[3]
 
 def p_dotcommon(p):
 	'''dotcommon : DOTCOMMON intexpr COMMA intexpr
-	             | DOTCOMMON intexpr COMMA intexpr COMMA STRING
-	             | DOTCOMMON intexpr COMMA intexpr COMMA STRING COMMA intexpr'''
+	             | DOTCOMMON intexpr COMMA intexpr COMMA string
+	             | DOTCOMMON intexpr COMMA intexpr COMMA string COMMA intexpr'''
 	p[0] = plist(p)
 
 def p_tworeg(p):
@@ -611,8 +627,8 @@ def p_call(p):
 	p[0] = plist(p)
 
 def p_dotsection(p):
-	'''dotsection : DOTSECTION STRING
-	              | DOTSECTION STRING COMMA attribute'''
+	'''dotsection : DOTSECTION string
+	              | DOTSECTION string COMMA attribute'''
 	p[0] = plist(p)
 
 def p_attribute(p):
@@ -631,18 +647,19 @@ def p_anythinglist(p):
 # used for stabs entries, anyway.
 def p_anythinglistarg(p):
 	'''anythinglistarg : intexpr
-	                   | STRING
-			   | FLOAT
+	                   | string
+			   | float
 			   | reg
 	                   | intexpr COMMA anythinglistarg
-	                   | STRING COMMA anythinglistarg
-	                   | FLOAT COMMA anythinglistarg
+	                   | string COMMA anythinglistarg
+	                   | float COMMA anythinglistarg
 	                   | reg COMMA anythinglistarg'''
 	p[0] = plist(p)
 
 def p_type(p):
 	'''type : HASH TYPENAME'''
-	p[0] = plist(p)
+	p[0] = ast.Type(p[2], lineno=p.lineno(1))
+
 
 def p_dottype(p):
 	'''dottype : DOTTYPE intexpr COMMA type'''
@@ -677,8 +694,8 @@ def p_label(p):
 
 def p_macro(p):
 	'''macro : id EQUALS intexpr
-	         | id EQUALS STRING'''
-	p[0] = ast.MacroDeclaration(p[1].getName(), p[3], lineno=p.lineno(1))
+	         | id EQUALS string'''
+	p[0] = ast.MacroDeclaration(p[1], p[3], lineno=p.lineno(1))
 
 def p_intexpr_int(p):
 	'''intexpr : INT'''
@@ -720,6 +737,14 @@ def p_intexpr_unary_ops(p):
 def p_reg(p):
 	'''reg : REG'''
 	p[0] = ast.Reg(p[1], lineno=p.lineno(1))
+
+def p_float(p):
+	'''float : FLOAT'''
+	p[0] = ast.Float(p[1], lineno=p.lineno(1))
+
+def p_string(p):
+	'''string : STRING'''
+	p[0] = ast.String(p[1], lineno=p.lineno(1))
 
 def p_id(p):
 	'''id : ID

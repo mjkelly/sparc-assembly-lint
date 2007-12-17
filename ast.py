@@ -49,35 +49,33 @@ class Node(object):
 class File(Node):
 	def __init__(self, *children, **keywords):
 		Node.__init__(self, *children, **keywords)
+		self.parent = None
+
+		for (index,child) in enumerate(self.children):
+			if not isinstance(child, Node):
+				raise RuntimeError("Bad child list in File node: %s" % child)
+
+			child.parent = self
+			if index + 1 < len(self.children):
+				child.next = self.children[index + 1]
+			else:
+				child.next = None
+
+			if index != 0:
+				child.prev = self.children[index - 1]
+			else:
+				child.prev = None
 
 	
-		def makePointers(node):
+		def makeParentPointers(node):
 			for (index,child) in enumerate(node.children):
 				if not isinstance(child, Node):
-					continue
+					raise RuntimeError("Bad child list in node %s. Child is: %s" % (node, child))
 
 				child.parent = node
-				if index + 1 < len(node.children):
-					if not isinstance(node, File):
-						child.next = node.parent.next
-					else:
-						child.next = node.children[index + 1]
-				else:
-					child.next = None
+				makeParentPointers(child)
 
-				if index != 0:
-					if not isinstance(node, File):
-						child.prev = node.parent.prev
-					else:
-						child.prev = node.children[index - 1]
-				else:
-					child.prev = None
-
-			for child in node.children:
-				if isinstance(child, Node):
-					makePointers(child)
-
-		makePointers(self)
+		makeParentPointers(self)
 
 
 class MacroDeclaration(Node):
@@ -97,7 +95,7 @@ class MacroDeclaration(Node):
 
 class SingletonContainer(Node):
 	def __init__(self, value, **keywords):
-		Node.__init__(self, value, **keywords)
+		Node.__init__(self, **keywords)
 		self.value = value
 
 	def __str__(self):
@@ -120,10 +118,14 @@ class LabelDeclaration(NameContainer):
 class Id(NameContainer):
 	def reduce(self):
 		node = self
-		while node.prev != None:
+
+		while not isinstance(node.parent, File):
+			node = node.parent
+
+		while not(node.prev is None):
 			node = node.prev
 			if isinstance(node, MacroDeclaration):
-				if node.name == self.getName():
+				if node.name.getName() == self.getName():
 					return node.reduce().value
 		return self
 
@@ -139,8 +141,19 @@ class Integer(ValueContainer):
 class Char(ValueContainer):
 	pass
 
-class Comment(Node):
+class Float(ValueContainer):
 	pass
+
+class String(ValueContainer):
+	pass
+
+class Type(ValueContainer):
+	pass
+
+class Comment(Node):
+	def __init__(self, *children, **keywords):
+		Node.__init__(self, **keywords)
+		self.text = list(children)
 
 class BinaryExpression(Node):
 	def __init__(self, name, left, right, lineno=0):
@@ -206,11 +219,13 @@ class BinaryOr(BinaryExpression):
 
 class UnaryExpression(Node):
 	def __init__(self, name, arg, lineno=0):
-		Node.__init__(self, arg, lineno=lineno)
+		Node.__init__(self, lineno=lineno)
 		self.__class__.__name__ = str(name)
+		self.name = name
+		self.arg = arg
 
 	def reduce(self):
-		arg  = self.children[0].reduce()
+		arg  = self.arg.reduce()
 
 		if isinstance(arg, ValueContainer):
 			op = self.__class__.__name__
@@ -251,5 +266,29 @@ class Branch(Node):
 class AnnulledBranch(Node):
 	pass
 
+class Address(Node):
+	def __init__(self, base, *children, **keywords):
+		Node.__init__(self, **keywords)
+		self.base = base
+		if len(children) == 2:
+			self.op = children[0]
+			self.offset = children[1]
+		else:
+			self.op = None
+			self.offset = None
+
+	def __str__(self):
+		if self.offset:
+			return "<%s=%s%s%s>" % (self.__class__.__name__, self.base, self.op, self.offset)
+		else:
+			return "<%s=%s>" % (self.__class__.__name__, self.base)
+
 class Instruction(Node):
-	pass
+	def __init__(self, name, *children, **keywords):
+		Node.__init__(self, *children, **keywords)
+		self.name = name
+
+	def __str__(self):
+		strlist = map(str, self.children)
+		return "<%s=%s:%s>" % (self.__class__.__name__, self.name, ':'.join(strlist))
+

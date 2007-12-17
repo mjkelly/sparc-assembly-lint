@@ -93,7 +93,7 @@ class TestSingleLines(unittest.TestCase):
 		result = self._runGood('MYINT=0xA')
 		macro = result.parse_tree[0]
 		self.assert_(type(macro),ast.MacroDeclaration) 
-		self.assert_(macro.name == 'MYINT') 
+		self.assert_(macro.name.value == 'MYINT') 
 		integer = macro.value
 		self.assert_(type(integer) == ast.Integer)
 		self.assert_(integer.value == 0xA)
@@ -118,13 +118,21 @@ class TestSingleLines(unittest.TestCase):
 
 	def testNestedMacros(self):
 		result = self._runGood('M1=5', 'M2=M1')
-		print result.parse_tree.children
 		macro1 = result.parse_tree[0]
 		macro2 = result.parse_tree[1]
 		reduced = macro2.reduce()
 		self.assert_(type(reduced) == ast.MacroDeclaration)
 		integer = reduced.value
 		self.assert_(integer.value == 5)
+
+	def testNestedMacroExpression(self):
+		result = self._runGood('M1=5', 'M2=M1 + 5')
+		macro1 = result.parse_tree[0]
+		macro2 = result.parse_tree[1]
+		reduced = macro2.reduce()
+		self.assert_(type(reduced) == ast.MacroDeclaration)
+		integer = reduced.value
+		self.assert_(integer.value == 10)
 	
 	def testOneRegisterLoad(self):
 		self._runGood('ld      [%i0], %l0')
@@ -174,6 +182,10 @@ class TestSingleLines(unittest.TestCase):
 	def testSkip(self):
 		self._runGood('.skip	4')
 		self._runGood('.skip	4, 1')
+
+	def testFloats(self):
+		self._runGood('.single	0r4.20')
+		self._runGood('.double	0r8.40')
 
 	def testAsciz(self):
 		self._runGood('.asciz	"foo", "bar", "baz"')
@@ -248,10 +260,12 @@ class TestSingleLines(unittest.TestCase):
 		self._runGood('not	%l0, %l1')
 		self._runGood('clr	[%l0]')
 		self._runGood('dec	42, %l1')
+		self._runGood('.type	foo, #function')
+		self._runGood('.file	"foo"')
 	
 	def testEmptyString(self):
 		self._runGood('')
-	
+
 
 if __name__ == '__main__':
 	unittest.main()

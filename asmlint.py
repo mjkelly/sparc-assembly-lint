@@ -46,6 +46,7 @@ def run(handle, opts):
 	parse_tree = None
 
 	input = handle.read()
+	# hack to avoid an error from PLY on empty input.
 	if not input:
 		warn('Empty input')
 		input = ' '
