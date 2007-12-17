@@ -33,6 +33,11 @@ class Node(object):
 	def reduce(self):
 		return self
 	
+	def __getitem__(self, key):
+		if isinstance(key, slice):
+			return self.children.__getitem__(key)
+		return self.children[key]
+	
         def __str__(self):
 		strlist = map(str, self.children)
                 return "<%s:%s>" % (self.__class__.__name__, ':'.join(strlist))
@@ -41,14 +46,48 @@ class Node(object):
 		'''pprint uses __repr__, not __str__, so make them the same.'''
 		return self.__str__()
 
+class File(Node):
+	def __init__(self, *children, **keywords):
+		Node.__init__(self, *children, **keywords)
+
+	
+		def makePointers(node):
+			for (index,child) in enumerate(node.children):
+				if not isinstance(child, Node):
+					continue
+
+				child.parent = node
+				if index + 1 < len(node.children):
+					if not isinstance(node, File):
+						child.next = node.parent.next
+					else:
+						child.next = node.children[index + 1]
+				else:
+					child.next = None
+
+				if index != 0:
+					if not isinstance(node, File):
+						child.prev = node.parent.prev
+					else:
+						child.prev = node.children[index - 1]
+				else:
+					child.prev = None
+
+			for child in node.children:
+				if isinstance(child, Node):
+					makePointers(child)
+
+		makePointers(self)
+
+
 class MacroDeclaration(Node):
 	def __init__(self, name, value, **keywords):
 		'''New Macro, "name=value".
 		@param name Id object containing the name of the macro.
 		@param value the value of the macro. Can be any type that has a resolve() method.'''
+		Node.__init__(self, name, value, **keywords)
 		self.name = name
 		self.value = value
-		self.lineno = getLineNumber(keywords, self.__class__.__name__)
 
 	def reduce(self):
 		return MacroDeclaration(self.name, self.value.reduce(), lineno=self.lineno)
@@ -58,8 +97,8 @@ class MacroDeclaration(Node):
 
 class SingletonContainer(Node):
 	def __init__(self, value, **keywords):
+		Node.__init__(self, value, **keywords)
 		self.value = value
-		self.lineno = getLineNumber(keywords, self.__class__.__name__)
 
 	def __str__(self):
 		return "<%s:%s>" % (self.__class__.__name__, self.value)
@@ -79,7 +118,14 @@ class LabelDeclaration(NameContainer):
 	pass
 
 class Id(NameContainer):
-	pass
+	def reduce(self):
+		node = self
+		while node.prev != None:
+			node = node.prev
+			if isinstance(node, MacroDeclaration):
+				if node.name == self.getName():
+					return node.reduce().value
+		return self
 
 class Integer(ValueContainer):
 	def __init__(self, value, **keywords):
@@ -104,7 +150,7 @@ class BinaryExpression(Node):
 	def reduce(self):
 		left  = self.children[0].reduce()
 		right = self.children[1].reduce()
-		
+
 		if isinstance(left, ValueContainer) and isinstance(right, ValueContainer):
 			op = self.__class__.__name__
 			val = eval(str(left.value) + str(op) + str(right.value))	# blatant cheating
@@ -162,6 +208,16 @@ class UnaryExpression(Node):
 	def __init__(self, name, arg, lineno=0):
 		Node.__init__(self, arg, lineno=lineno)
 		self.__class__.__name__ = str(name)
+
+	def reduce(self):
+		arg  = self.children[0].reduce()
+
+		if isinstance(arg, ValueContainer):
+			op = self.__class__.__name__
+			val = eval(str(op) + str(arg.value))	# blatant cheating
+			return Integer(val, lineno=self.lineno)
+		return self
+
 
 	def from_str(name, arg, lineno=0):
 		classes = {

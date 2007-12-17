@@ -433,7 +433,7 @@ def t_error(t):
 
 def p_file(p):
 	'''file : lines'''
-	p[0] = p[1]
+	p[0] = ast.File(*p[1], **{'lineno':0})
 
 def p_lines(p):
 	'''lines : line

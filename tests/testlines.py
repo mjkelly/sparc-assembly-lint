@@ -115,6 +115,16 @@ class TestSingleLines(unittest.TestCase):
 		self.assert_(type(reduced) == ast.MacroDeclaration)
 		integer = reduced.value
 		self.assert_(integer.value == 32)
+
+	def testNestedMacros(self):
+		result = self._runGood('M1=5', 'M2=M1')
+		print result.parse_tree.children
+		macro1 = result.parse_tree[0]
+		macro2 = result.parse_tree[1]
+		reduced = macro2.reduce()
+		self.assert_(type(reduced) == ast.MacroDeclaration)
+		integer = reduced.value
+		self.assert_(integer.value == 5)
 	
 	def testOneRegisterLoad(self):
 		self._runGood('ld      [%i0], %l0')
@@ -188,6 +198,15 @@ class TestSingleLines(unittest.TestCase):
 
 	def testVarExpr(self):
 		self._runGood('save	%sp, -(92 + STACK_SPACE) & -8, %sp')
+
+	def testUnaryNegative(self):
+		result = self._runGood('M1=-(90 + 2)')
+		macro = result.parse_tree[0]
+		reduced = macro.reduce()
+		self.assert_(type(reduced) == ast.MacroDeclaration)
+		integer = reduced.value
+		self.assert_(integer.value == -92)
+
 
 	def testCall(self):
 		self._runGood('call	printf')
