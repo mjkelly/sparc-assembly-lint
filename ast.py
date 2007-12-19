@@ -119,7 +119,11 @@ class Id(NameContainer):
 	def reduce(self):
 		node = self
 
-		while not isinstance(node.parent, File):
+		while True:
+			if not hasattr(node, 'parent'):
+				raise RuntimeError("Node %s has no parent pointer! Baaad mojo!" % node)
+			if isinstance(node.parent, File):
+				break
 			node = node.parent
 
 		while not(node.prev is None):
@@ -165,10 +169,12 @@ class BinaryExpression(Node):
 		right = self.children[1].reduce()
 
 		if isinstance(left, ValueContainer) and isinstance(right, ValueContainer):
-			op = self.__class__.__name__
-			val = eval(str(left.value) + str(op) + str(right.value))	# blatant cheating
-			return Integer(val, lineno=self.lineno)
-		return self
+			return Integer(self.op(left.getValue(), right.getValue()), lineno=self.lineno)
+		else:
+			return self
+	
+	def op(self, left, right):
+		raise RuntimeError("Unimplemented binary operator: %s" % self.__class__.__name__)
 
 	def from_str(name, left, right, lineno=0):
 		classes = {
@@ -188,38 +194,48 @@ class BinaryExpression(Node):
 	from_str = staticmethod(from_str)
 	
 class BinaryPlus(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left + right
 
 class BinaryMinus(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left - right
 
 class BinaryMul(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left * right
 
 class BinaryDiv(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left / right
 
 class BinaryMod(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left % right
 
 class BinaryXor(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left ^ right
 
 class BinaryLShift(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left << right
 
 class BinaryRShift(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left >> right
 
 class BinaryAnd(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left & right
 
 class BinaryOr(BinaryExpression):
-	pass
+	def op(self, left, right):
+		return left | right
 
 class UnaryExpression(Node):
 	def __init__(self, name, arg, lineno=0):
-		Node.__init__(self, lineno=lineno)
+		Node.__init__(self, arg, lineno=lineno)
 		self.__class__.__name__ = str(name)
 		self.name = name
 		self.arg = arg
@@ -228,11 +244,12 @@ class UnaryExpression(Node):
 		arg  = self.arg.reduce()
 
 		if isinstance(arg, ValueContainer):
-			op = self.__class__.__name__
-			val = eval(str(op) + str(arg.value))	# blatant cheating
-			return Integer(val, lineno=self.lineno)
-		return self
+			return Integer(self.op(arg.getValue()), lineno=self.lineno)
+		else:
+			return self
 
+	def op(self, arg):
+		raise RuntimeError("Unimplemented unary operator: %s" % self.__class__.__name__)
 
 	def from_str(name, arg, lineno=0):
 		classes = {
@@ -246,16 +263,20 @@ class UnaryExpression(Node):
 	from_str = staticmethod(from_str)
 
 class UnaryMinus(UnaryExpression):
-	pass
+	def op(self, arg):
+		return -arg
 
 class UnaryNot(UnaryExpression):
-	pass
+	def op(self, arg):
+		return ~arg
 
 class UnaryHi(UnaryExpression):
-	pass
+	def op(self, arg):
+		return (arg & 0xFFFFFC00) >> 10
 
 class UnaryLo(UnaryExpression):
-	pass
+	def op(self, arg):
+		return arg & 0x000003FF
 
 class Save(Node):
 	pass

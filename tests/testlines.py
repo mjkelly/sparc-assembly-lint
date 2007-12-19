@@ -65,6 +65,11 @@ class TestSingleLines(unittest.TestCase):
 		self.assert_(result.num_errors != 0)
 		return result
 
+	def _get_macro_value(self, name, parse_tree):
+		for instr in parse_tree.children:
+			if isinstance(instr, ast.MacroDeclaration) and instr.name.value == name:
+				return instr.value.reduce()
+
 	def testCommand(self):
 		self._runGood('add     %o0, 10, %l0')
 	
@@ -110,29 +115,22 @@ class TestSingleLines(unittest.TestCase):
 	
 	def testIntegerOperators(self):
 		result = self._runGood("M1='a' + 32*3 - 128/2 >> 2")
-		macro = result.parse_tree[0]
-		reduced = macro.reduce()
-		self.assert_(type(reduced) == ast.MacroDeclaration)
-		integer = reduced.value
-		self.assert_(integer.value == 32)
+		m1 = self._get_macro_value('M1', result.parse_tree)
+		self.assert_(m1.value == 32)
 
 	def testNestedMacros(self):
 		result = self._runGood('M1=5', 'M2=M1')
-		macro1 = result.parse_tree[0]
-		macro2 = result.parse_tree[1]
-		reduced = macro2.reduce()
-		self.assert_(type(reduced) == ast.MacroDeclaration)
-		integer = reduced.value
-		self.assert_(integer.value == 5)
+		m1 = self._get_macro_value('M1', result.parse_tree)
+		m2 = self._get_macro_value('M2', result.parse_tree)
+		self.assert_(m1.value == 5)
+		self.assert_(m2.value == 5)
 
 	def testNestedMacroExpression(self):
 		result = self._runGood('M1=5', 'M2=M1 + 5')
-		macro1 = result.parse_tree[0]
-		macro2 = result.parse_tree[1]
-		reduced = macro2.reduce()
-		self.assert_(type(reduced) == ast.MacroDeclaration)
-		integer = reduced.value
-		self.assert_(integer.value == 10)
+		m1 = self._get_macro_value('M1', result.parse_tree)
+		m2 = self._get_macro_value('M2', result.parse_tree)
+		self.assert_(m1.value == 5)
+		self.assert_(m2.value == 10)
 	
 	def testOneRegisterLoad(self):
 		self._runGood('ld      [%i0], %l0')
@@ -213,12 +211,18 @@ class TestSingleLines(unittest.TestCase):
 
 	def testUnaryNegative(self):
 		result = self._runGood('M1=-(90 + 2)')
-		macro = result.parse_tree[0]
-		reduced = macro.reduce()
-		self.assert_(type(reduced) == ast.MacroDeclaration)
-		integer = reduced.value
-		self.assert_(integer.value == -92)
+		m1 = self._get_macro_value('M1', result.parse_tree)
+		self.assert_(m1.value == -92)
 
+	def testHi(self):
+		result = self._runGood('M1=~0','M2=%hi(M1)')
+		m1 = self._get_macro_value('M2', result.parse_tree)
+		self.assert_(m1.value == 0x003fffff)
+
+	def testLo(self):
+		result = self._runGood('M1=%lo(0xffffffff)')
+		m1 = self._get_macro_value('M1', result.parse_tree)
+		self.assert_(m1.value == 0x000003ff)
 
 	def testCall(self):
 		self._runGood('call	printf')
