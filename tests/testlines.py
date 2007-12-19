@@ -224,6 +224,13 @@ class TestSingleLines(unittest.TestCase):
 		m1 = self._get_macro_value('M1', result.parse_tree)
 		self.assert_(m1.value == 0x000003ff)
 
+	def testUnimplementedOperators(self):
+		self._runGood('set	%r_disp32(0xf1f1f1f1), %l0')
+		self._runGood('set	%r_plt32(0xf1f1f1f1), %l0')
+		result = self._runGood('M1=%r_plt32(%r_disp32(123))')
+		m1 = self._get_macro_value('M1', result.parse_tree)
+		self.assert_(m1.value == 123)
+
 	def testCall(self):
 		self._runGood('call	printf')
 		self._runGood('call	printf, 3')

@@ -257,6 +257,8 @@ class UnaryExpression(Node):
 			'~': UnaryNot,
 			'%lo': UnaryLo,
 			'%hi': UnaryHi,
+			'%r_disp32' : UnaryNop,
+			'%r_plt32' : UnaryNop,
 		}
 		return (classes[name])(name, arg, lineno=lineno)
 	
@@ -272,11 +274,18 @@ class UnaryNot(UnaryExpression):
 
 class UnaryHi(UnaryExpression):
 	def op(self, arg):
-		return (arg & 0xFFFFFC00) >> 10
+		# yes, this mask is necessary: otherwise python does a signed shift
+		return (arg & 0xfffffc00) >> 10
 
 class UnaryLo(UnaryExpression):
 	def op(self, arg):
-		return arg & 0x000003FF
+		return arg & 0x000003ff
+
+class UnaryNop(UnaryExpression):
+	'''Operators that exist solely to issue warnings. %r_disp32 and
+	   %r_plt32, I'm looking at you.'''
+	def op(self, arg):
+		return arg
 
 class Save(Node):
 	pass
