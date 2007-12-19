@@ -235,7 +235,7 @@ int_regex        = r'-?((0x[0-9a-fA-F]+)|([0-9]+))'
 float_regex      = r'0r-?((\d+(\.\d*)?)|(\.\d+))([eE]-?\d+)?'
 string_regex     = r'"([^"\\]|(\\.))*"'
 char_regex       = r"'(([^'\\])|(\\.))'"
-reg_regex        = r'%[\w]+'	# very permissive; screen after matching
+reg_regex        = r'%([ilog][0-7]|[rfc][0-9]|[rfc][12][0-9]|[rfc]30|[rfc]31|sp|fp|fsr|fq|csr|cq|psr|tbr|wim|y)'
 
 t_ignore = " \t"
 

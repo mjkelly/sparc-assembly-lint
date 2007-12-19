@@ -100,11 +100,11 @@ def main(argv):
 	
 	pp = pprint.PrettyPrinter(indent=2)
 	if opts.verbosity >= 0:
-		info("-----------------------------------------------------------------------------")
+		info("-" * 80)
 		print "FINAL PARSE TREE:"
 		pp = pprint.PrettyPrinter(indent=2)
 		pp.pprint(parse_tree)
-		info("-----------------------------------------------------------------------------")
+		info("-" * 80)
 
 	if num_errors > 0:
 		info("%d errors." % num_errors)

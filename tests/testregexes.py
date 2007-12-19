@@ -71,8 +71,25 @@ class TestRegexes(unittest.TestCase):
 		self._regex_tester(asm_parser.float_regex, pos, neg)
 	
 	def testRegister(self):
-		pos = ['%g0', '%r1', '%l4', '%scr', '%y', '%r_disp32']
-		neg = ['', '%%', '%']
+		specials = [ '%fsr', '%fq', '%c0', '%csr', '%cq', '%psr', '%tbr', '%wim', '%y']
+		unaryOperators = [ '%lo', '%hi', '%r_disp32', '%r_plt32', '%asr1' ]
+		self._regex_tester(asm_parser.reg_regex, specials, unaryOperators)
+
+		pos = []
+		for i in range(0,31):
+			i = str(i)
+			pos.append('%r' + i)
+			pos.append('%f' + i)
+			pos.append('%c' + i)
+
+		for i in range(0,7):
+			i = str(i)
+			pos.append('%i' + i)
+			pos.append('%l' + i)
+			pos.append('%o' + i)
+			pos.append('%g' + i)
+
+		neg = ['', '%%', '%', '%lO', '%l03', '%r32', '%1', '%y1', '%l8', '%r32']
 		self._regex_tester(asm_parser.reg_regex, pos, neg)
 
 if __name__ == '__main__':
