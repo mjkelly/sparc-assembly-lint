@@ -1,0 +1,65 @@
+'\" t
+.TH ASM 1 "22 MAR 1997"
+.SH NAME
+asm \- SPARC assembler
+.SH SYNOPSIS
+.B asm
+[
+.B \-O
+.BI \-o\  output_filename
+.B \-L
+.B \-l
+]
+.I infile
+.SH DESCRIPTION
+.B asm
+Assembles SPARC Version 8 assembly language programs and turn them into NetBSD/sparc 1.1
+object code modules.
+.PP
+.B asm
+is a standard, two-pass assembler that accepts all of the SunOS assembler
+directives, most of the GNU assembler directives, and all of the suggested
+assembly language outlined in ``The SPARC Architecture Manual'', Version 8.
+.SH OPTIONS
+.TP 10
+.B \-0
+Output information on stderr about offsets of various segments in the 
+final object file.
+.TP
+.BI \-o\  output_filename
+Use
+.I output_filename
+as the name of the final object file. Default is to use
+.I a.out
+as the name of the final object file.
+.TP
+.B \-L
+Keep (in symbol table) local symbols, which, by convention, start with `L'
+.TP
+.B \-l
+Output symbol table debugging information on stderr
+.SH FILES
+.I infile
+must be specified.
+.B asm
+reads the input file twice during assembly.
+.SH BUGS
+.PP
+The way it handles floating-point constants is apparently compiler-dependent.
+Compiled with GNU C, it can handle the small floating-point constant called
+FLT_MIN.  Compiled with lcc v3.5, it cannot.
+.PP
+It's slower than it ought to be.
+.PP
+It assembles SPARC V8 mnemonics just as SPARC V9 machines are appearing.
+.SH "SEE ALSO"
+.PD
+.BR The SPARC Architecture Manual, Version 8
+ISBN 0-13-825001-4, Prentice Hall, 1992
+.SH AUTHOR
+Bruce Ediger, bediger@csn.net
+.PP
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+without any conditions or restrictions.  This software is provided ``as
+is'' without express or implied warranty.
