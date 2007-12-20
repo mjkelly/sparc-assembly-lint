@@ -21,8 +21,8 @@ from tests.testlines import TestSingleLines
 def main():
 	opt_parser = OptionParser(usage="%prog [OPTIONS]")
 
-	opt_parser.add_option("--verbosity", action="store", dest="verbosity",
-		type="int", help="Output verbosity: -1 = completely silent, 0 = quiet, 1 = some debug, 2 = copious debug.")
+        opt_parser.add_option('-v', '--verbose', action="count", dest="verbosity", 
+	                help="Increase verbosity of output.  Use multiple times to increase verbosity further.")
 	opt_parser.add_option("-t", "--test", action="append", dest="run_tests",
 		type="string", help="Name of specific test to run. May be given multiple times to run more than one test.")
 	opt_parser.add_option("-l", "--list", action="store_true", dest="list",
