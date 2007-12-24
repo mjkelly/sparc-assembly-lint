@@ -15,7 +15,7 @@ from optparse import OptionParser, OptionGroup
 import unittest
 
 from tests.testregexes import TestRegexes
-from tests.testlines import TestSingleLines
+from tests.testlines import TestLines
 #from tests.unit_tests import UnitTests
 
 def main():
@@ -102,9 +102,9 @@ class TestRunner:
 		return unittest.TextTestRunner(verbosity=2).run(suite)
 
 	def runtest_lines(self):
-		TestSingleLines.verbosity = self.opts.verbosity
-		TestSingleLines.run_unstable = self.opts.run_unstable
-		suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleLines)
+		TestLines.verbosity = self.opts.verbosity
+		TestLines.run_unstable = self.opts.run_unstable
+		suite = unittest.TestLoader().loadTestsFromTestCase(TestLines)
 		return unittest.TextTestRunner(verbosity=2).run(suite)
 
 if __name__ == '__main__':

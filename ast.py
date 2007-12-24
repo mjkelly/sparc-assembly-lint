@@ -10,27 +10,29 @@
 # -----------------------------------------------------------------
 
 import pprint
-
-def getLineNumber(hash, className):
-	if hash.has_key('lineno'):
-		return hash['lineno']
-	else:
-		raise RuntimeError(
-			"[Internal Error] Keyword 'lineno' not defined for %s" % className)
+import copy
 
 
 class Node(object):
 	'''Common methods for all AST nodes. All AST classes should inherit from this.'''
-
 	def __init__(self, *children, **keywords):
 		'''Create a node with children.  Store the line number'''
 		self.children = list(children)
-		self.lineno = getLineNumber(keywords, self.__class__.__name__)
+		self.lineno = Node._getLineNumber(keywords, self.__class__.__name__)
+
+	@staticmethod
+	def _getLineNumber(hash, className):
+		if hash.has_key('lineno'):
+			return hash['lineno']
+		else:
+			raise RuntimeError(
+				"[Internal Error] Keyword 'lineno' not defined for %s" % className)
 	
         def getLine(self):
                 return self.lineno
 	
 	def reduce(self):
+		self.children = map(lambda x : x.reduce(), self.children)
 		return self
 	
 	def __getitem__(self, key):
@@ -76,6 +78,10 @@ class File(Node):
 				makeParentPointers(child)
 
 		makeParentPointers(self)
+	
+	def reduce(self):
+		cp = copy.deepcopy(self)
+		return Node.reduce(cp)
 
 
 class MacroDeclaration(Node):
@@ -88,7 +94,8 @@ class MacroDeclaration(Node):
 		self.value = value
 
 	def reduce(self):
-		return MacroDeclaration(self.name, self.value.reduce(), lineno=self.lineno)
+		self.value = self.value.reduce()
+		return self
 
 	def __str__(self):
 		return "<%s:%s=%s>" % (self.__class__.__name__, self.name, self.value)
@@ -97,7 +104,7 @@ class SingletonContainer(Node):
 	def __init__(self, value, **keywords):
 		Node.__init__(self, **keywords)
 		self.value = value
-
+	
 	def __str__(self):
 		return "<%s:%s>" % (self.__class__.__name__, self.value)
 

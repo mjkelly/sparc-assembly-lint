@@ -18,12 +18,16 @@ from asm_parser import yacc, debug, warn, info, get_num_errors, \
 	get_num_warnings, init_parser, other_error, \
 	ParseError, FormatCheckError
 import ast
-
-lastResult = None
+import treechecker
 
 class ParseResult(object):
 	def __init__(self, parse_tree, num_errors):
 		self.parse_tree = parse_tree
+
+		if parse_tree is None:
+			self.reduced_tree = None
+		else:
+			self.reduced_tree = parse_tree.reduce()
 		self.num_errors = num_errors
 
 class ALOptionParser(OptionParser):
@@ -37,7 +41,7 @@ class ALOptionParser(OptionParser):
 		self.add_option('--' + name, action="store_true",  dest=dest, help=help_true)
 		self.add_option('--no-' + name, action="store_false", dest=dest, help=help_false)
 
-def run(handle, opts):
+def run(handle, opts, treecheckers = []):
 	'''Run the linter on a file handle.
 	@return the number of errors that occurred in the parse'''
 	lineno = 0
@@ -56,8 +60,9 @@ def run(handle, opts):
 		print 'Error on line %d: %s' % (lineno, e)
 		other_error()
 	
-	global lastResult
 	lastResult = ParseResult(parse_tree, get_num_errors())
+	for checker in treecheckers:
+		checker(lastResult)
 	return lastResult
 	
 def main(argv):
@@ -90,20 +95,25 @@ def main(argv):
 		input_filename = args[0]
 		input_file = open(input_filename, 'r')
 	
-	result = run(input_file, opts)
+	result = run(input_file, opts, [treechecker.saveOffset])
 
 	num_errors = result.num_errors
-	parse_tree = result.parse_tree
 
 	if input_file != sys.stdin:
 		input_file.close()
 	
 	pp = pprint.PrettyPrinter(indent=2)
 	if opts.verbosity >= 0:
+		if opts.verbosity >= 1:
+			info("-" * 80)
+			print "NON-REDUCED PARSE TREE:"
+			pp = pprint.PrettyPrinter(indent=2)
+			pp.pprint(result.parse_tree)
+
 		info("-" * 80)
 		print "FINAL PARSE TREE:"
 		pp = pprint.PrettyPrinter(indent=2)
-		pp.pprint(parse_tree)
+		pp.pprint(result.reduced_tree)
 		info("-" * 80)
 
 	if num_errors > 0:

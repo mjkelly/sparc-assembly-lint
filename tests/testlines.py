@@ -20,7 +20,7 @@ import ast
 
 def unstable(f):
 	'''Decorator to mark a test function as unstable, which will not be run
-	   unless TestSingleLines.run_unstable is true.'''
+	   unless TestLines.run_unstable is true.'''
 	def inner(self,*args, **kwargs):
 		if self.run_unstable:
 			return f(self, *args, **kwargs)
@@ -28,7 +28,7 @@ def unstable(f):
 			print >> sys.stderr, "[SKIPPNG UNSTABLE TEST] ",
 	return inner
 
-class TestSingleLines(unittest.TestCase):
+class TestLines(unittest.TestCase):
 	# If run from testrunner.py, this is overridden with testrunner's
 	# value. (testrunner ALWAYS sets it.)
 	verbosity = -1
@@ -46,22 +46,22 @@ class TestSingleLines(unittest.TestCase):
 
 	# Run the linter on a single line.
 	# @return number of errors found
-	def _runParserOneLine(self, *lines):
+	def _runParser(self, *lines):
 		try:
 			input = '\n'.join(list(lines))
-			result = asmlint.run(StringIO( input ), TestSingleLines.BogusOptions(self))
+			result = asmlint.run(StringIO( input ), TestLines.BogusOptions(self))
 		except (asmlint.ParseError, asmlint.FormatCheckError), e:
 			print "ASSERT FAILED!", e
 			self.assert_(False)
 		return result
 
 	def _runGood(self, *lines):
-		result = self._runParserOneLine(*lines)
+		result = self._runParser(*lines)
 		self.assert_(result.num_errors == 0)
 		return result
 
 	def _runBad(self, *lines):
-		result = self._runParserOneLine(*lines)
+		result = self._runParser(*lines)
 		self.assert_(result.num_errors != 0)
 		return result
 
@@ -256,13 +256,20 @@ class TestSingleLines(unittest.TestCase):
 		self._runBad('mov,a	%l0, %l1')
 	
 	def testBadNumberOfArguments(self):
-		self._runBad('not');
-		self._runBad('mov');
-		self._runBad('mov	%l0, %l1, %l2');
-		self._runBad('add	%l0, %l1, %l2, %l3');
-		self._runBad('bl	foo, bar');
-		self._runBad('bl');
-		self._runBad('bl,a');
+		self._runBad('not')
+		self._runBad('mov')
+		self._runBad('mov	%l0, %l1, %l2')
+		self._runBad('add	%l0, %l1, %l2, %l3')
+		self._runBad('bl	foo, bar')
+		self._runBad('bl')
+		self._runBad('bl,a')
+	
+	@unstable
+	def testSaveOffset(self):
+		self._runGood('save	%sp, -96, %sp')
+		self._runGood('MACRO=-96', 'save %sp, MACRO, %sp')
+		self._runGood('EXTRA_VARS=7', 'STACK_SIZE = -( 92 + EXTRA_VARS ) & -8', 'save %sp, STACK_SIZE, %sp')
+		self._runBad('save %sp, -95, %sp')
 	
 	# Stuff I don't use or run into regularly, that might otherwise break
 	# without me noticing. NOT floating point stuff. That deserves its own
