@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -----------------------------------------------------------------
 # asmlint.py -- Find common errors in SPARC assembly files.
-# Copyright 2007 Michael Kelly, David Lindquist
+# Copyright 2007 Michael Kelly (michael@michaelkelly.org)
+# Copyright 2007 David Lindquist (DavidEzek@gmail.com)
 #
 # This program is released under the terms of the GNU General Public
 # License as published by the Free Software Foundation; either version 2
@@ -21,14 +22,19 @@ import ast
 import treechecker
 
 class ParseResult(object):
-	def __init__(self, parse_tree, num_errors):
+	def __init__(self, parse_tree):
 		self.parse_tree = parse_tree
 
 		if parse_tree is None:
 			self.reduced_tree = None
 		else:
 			self.reduced_tree = parse_tree.reduce()
-		self.num_errors = num_errors
+	
+	def get_num_errors(self):
+		return get_num_errors()
+
+	def get_num_warnings(self):
+		return get_num_warnings()
 
 class ALOptionParser(OptionParser):
 	'''Make it easier to add boolean options (--foo and --no-foo).'''
@@ -60,7 +66,7 @@ def run(handle, opts, treecheckers = []):
 		print 'Error on line %d: %s' % (lineno, e)
 		other_error()
 	
-	lastResult = ParseResult(parse_tree, get_num_errors())
+	lastResult = ParseResult(parse_tree)
 	for checker in treecheckers:
 		checker(lastResult)
 	return lastResult
@@ -95,9 +101,9 @@ def main(argv):
 		input_filename = args[0]
 		input_file = open(input_filename, 'r')
 	
-	result = run(input_file, opts, [treechecker.saveOffset])
+	result = run(input_file, opts, treechecker.allChecks)
 
-	num_errors = result.num_errors
+	num_errors = result.get_num_errors()
 
 	if input_file != sys.stdin:
 		input_file.close()

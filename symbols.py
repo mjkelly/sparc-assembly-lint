@@ -1,6 +1,7 @@
 # -----------------------------------------------------------------------------
 # symbols.py -- List of reserved words in SPARC assembly.
 # Copyright 2007 Michael Kelly (michael@michaelkelly.org)
+# Copyright 2007 David Lindquist (DavidEzek@gmail.com)
 #
 # This program is released under the terms of the GNU General Public
 # License as published by the Free Software Foundation; either version 2
