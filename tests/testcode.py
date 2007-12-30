@@ -31,9 +31,6 @@ def unstable(f):
 
 	
 class TestCode(unittest.TestCase):
-	# If run from testrunner.py, this is overridden with testrunner's
-	# value. (testrunner ALWAYS sets it.)
-	verbosity = -1
 	# Whether to run tests that test nonexistant or future functionality.
 	run_unstable = False
 
@@ -48,23 +45,10 @@ class TestCode(unittest.TestCase):
 		'restore'
 	]
 
-	class BogusOptions:
-		'''This is a slightly ugly way of passing our custom options to
-		the test parser.'''
-		verbosity = None
-
-		def __init__(self, container):
-			verbosity = container.verbosity
-
 	def runParser(self, *lines):
 		'''Run the linter on the passed in lines.  Returns a result object containing the parse tree and more.'''
-		try:
-			input = '\n'.join(list(lines))
-			result = asmlint.run(StringIO(input), TestLines.BogusOptions(self),
-				treechecker.allChecks)
-		except (asmlint.ParseError, asmlint.FormatCheckError), e:
-			print "ASSERT FAILED!", e
-			self.assert_(False)
+		input = '\n'.join(list(lines))
+		result = asmlint.run(StringIO(input), object(), treechecker.allChecks)
 		return result
 
 	def _runGood(self, *lines):
@@ -90,14 +74,11 @@ class TestCode(unittest.TestCase):
 				return instr.value.reduce()
 
 
-
-
 class TestLines(TestCode):
 	def runParser(self, *lines):
 		'''Run the lines through the parser by inserting them inside of a main declaration'''
 		code = self.basicStart + list(lines) + self.basicEnd
 		return TestCode.runParser(self, *code)
-
 
 	def testCommand(self):
 		self._runGood('add     %o0, 10, %l0')

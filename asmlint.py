@@ -15,26 +15,80 @@ from optparse import OptionParser, OptionGroup
 import sys
 import pprint
 
-from asm_parser import yacc, debug, warn, info, get_num_errors, \
-	get_num_warnings, init_parser, other_error, \
-	ParseError, FormatCheckError
+from asm_parser import yacc, init_parser
 import ast
 import treechecker
 
-class ParseResult(object):
-	def __init__(self, parse_tree):
-		self.parse_tree = parse_tree
+import logging
 
+
+class ParseResult(object):
+	def __init__(self):
+		# Set number of warnings, errors
+		self.num_warnings = 0
+		self.num_errors   = 0
+
+		# Create logger
+		self.logger = logging.getLogger()
+
+		class CounterHandler(logging.Handler):
+			'''Increment counters in self object when messages of
+			certain log levels are encountered'''
+			def emit(notused, record):
+				if record.levelno == logging.ERROR:
+					self.num_errors += 1
+				elif record.levelno == logging.WARNING:
+					self.num_warnings += 1
+		self.logger.addHandler(CounterHandler())
+
+		# Attach logger functions to class
+		self.debug = self.logger.debug
+		self.info = self.logger.info
+		self.warn = self.logger.warn
+		self.error = self.logger.error
+	
+	def add_parse_tree(self, parse_tree):
+		'''Add a produced parse tree to the result.  Performs the reduction of the parse tree.'''
+		self.parse_tree = parse_tree
 		if parse_tree is None:
 			self.reduced_tree = None
 		else:
 			self.reduced_tree = parse_tree.reduce()
-	
+
 	def get_num_errors(self):
-		return get_num_errors()
+		return self.num_errors
 
 	def get_num_warnings(self):
-		return get_num_warnings()
+		return self.num_warnings
+
+	def printParseTree(self):
+		if self.logger.level <= logging.INFO:
+			if self.logger.level == logging.DEBUG:
+				print "-" * 80
+				print "NON-REDUCED PARSE TREE:"
+				pp = pprint.PrettyPrinter(indent=2)
+				pp.pprint(self.parse_tree)
+
+			print "-" * 80
+			print "FINAL PARSE TREE:"
+			pp = pprint.PrettyPrinter(indent=2)
+			pp.pprint(self.reduced_tree)
+			print "-" * 80
+	
+	def printSummary(self):
+		pp = pprint.PrettyPrinter(indent=2)
+
+		if not self.parse_tree is None:
+			self.printParseTree()
+	
+		num_errors = self.get_num_errors()
+		if num_errors > 0:
+			print "%d errors." % num_errors
+
+		num_warnings = self.get_num_warnings()
+		if num_warnings > 0:
+			print "%d warnings." % num_warnings
+	
 
 class ALOptionParser(OptionParser):
 	'''Make it easier to add boolean options (--foo and --no-foo).'''
@@ -50,26 +104,42 @@ class ALOptionParser(OptionParser):
 def run(handle, opts, treecheckers = []):
 	'''Run the linter on a file handle.
 	@return the number of errors that occurred in the parse'''
-	lineno = 0
-	init_parser(opts)
 
+	# create result to build
+	result = ParseResult()
+	lastResult = result
+
+	init_parser(result)
 	parse_tree = None
 
 	input = handle.read()
 	# hack to avoid an error from PLY on empty input.
 	if not input:
-		warn('Empty input')
+		result.warn('Empty input')
 		input = ' '
-	try:
-		parse_tree = yacc.parse(input, tracking=True)
-	except (ParseError, FormatCheckError), e:
-		print 'Error on line %d: %s' % (lineno, e)
-		other_error()
+
+	parse_tree = yacc.parse(input, tracking=True)
 	
-	lastResult = ParseResult(parse_tree)
+	result.add_parse_tree(parse_tree)
 	for checker in treecheckers:
-		checker(lastResult)
-	return lastResult
+		checker(result)
+	return result
+
+def setLogLevel(verbosity):
+	level = logging.DEBUG
+	if verbosity == 0:
+		level = logging.WARNING
+	elif verbosity == 1:
+		level = logging.INFO
+	logging.getLogger().setLevel(level)
+
+
+def addConsoleLogHandler():
+	handler = logging.StreamHandler()
+	handler.setFormatter(
+		logging.Formatter("%(levelname)s: %(message)s")
+	)
+	logging.getLogger().addHandler(handler)
 	
 def main(argv):
 
@@ -86,8 +156,10 @@ def main(argv):
 
 	(opts, args) = opt_parser.parse_args()
 
-	if opts.quiet:
-		opts.verbosity = -1
+	if not opts.quiet:
+		addConsoleLogHandler()
+
+	setLogLevel(opts.verbosity)
 
 	if len(args) > 1:
 		opt_parser.print_help()
@@ -98,33 +170,12 @@ def main(argv):
 	
 	result = run(input_file, opts, treechecker.allChecks)
 
-	num_errors = result.get_num_errors()
-
 	if input_file != sys.stdin:
 		input_file.close()
 	
-	pp = pprint.PrettyPrinter(indent=2)
-	if opts.verbosity >= 0:
-		if opts.verbosity >= 1:
-			info("-" * 80)
-			print "NON-REDUCED PARSE TREE:"
-			pp = pprint.PrettyPrinter(indent=2)
-			pp.pprint(result.parse_tree)
+	result.printSummary()
 
-		info("-" * 80)
-		print "FINAL PARSE TREE:"
-		pp = pprint.PrettyPrinter(indent=2)
-		pp.pprint(result.reduced_tree)
-		info("-" * 80)
-
-	if num_errors > 0:
-		info("%d errors." % num_errors)
-
-	num_warnings = get_num_warnings()
-	if num_warnings > 0:
-		info("%d warnings." % num_warnings)
-
-	if num_errors == 0:
+	if result.get_num_errors() == 0:
 		return 0
 	else:
 		return 1

@@ -10,7 +10,6 @@
 # Mon Dec 24 03:16:38 PST 2007
 # -----------------------------------------------------------------
 
-from asm_parser import debug, warn, info
 import ast
 
 def _nodeMap(tree, f, nodeClass):
@@ -29,7 +28,8 @@ def _nodeMap(tree, f, nodeClass):
 		for child in tree.children:
 			_nodeMap(child, f, nodeClass)
 
-def saveOffset(parse_tree):
+def saveOffset(parse_result):
+	warn = parse_result.warn
 	def checkSave(saveNode):
 		if isinstance(saveNode.children[1], ast.Integer):
 			offset = saveNode.children[1].getValue()
@@ -40,9 +40,10 @@ def saveOffset(parse_tree):
 				warn("Save offset, line %d: Offset is %d, isn't <= -92."
 					% (saveNode.getLine(), offset))
 			
-	_nodeMap(parse_tree.reduced_tree, checkSave, ast.Save)
+	_nodeMap(parse_result.reduced_tree, checkSave, ast.Save)
 
-def branchDelaySlot(parse_tree):
+def branchDelaySlot(parse_result):
+	warn = parse_result.warn
 	def checkLabelInDelaySlot(branchNode):
 		delaySlotNode = branchNode.next
 		if delaySlotNode is None:
@@ -59,7 +60,7 @@ def branchDelaySlot(parse_tree):
 			warn("Line %d: Synthetic instruction that expands to multiple instructions used in a branch delay slot." %
 				delaySlotNode.getLine())
 			
-	_nodeMap(parse_tree.reduced_tree, checkLabelInDelaySlot, ast.Branch)
+	_nodeMap(parse_result.reduced_tree, checkLabelInDelaySlot, ast.Branch)
 
 
 allChecks = [saveOffset, branchDelaySlot ]

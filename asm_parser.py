@@ -19,6 +19,7 @@ import ply.lex as lex
 import ply.yacc as yacc
 
 import sys
+import logging
 import pprint
 import re
 
@@ -28,29 +29,6 @@ import re
 
 def print_token(t):
 	debug("%s=%s" % (t.type, t.value))
-
-def error(msg):
-	if opts.verbosity >= 0:
-		log('ERROR', msg)
-	
-def warn(msg):
-	global warnings
-	if opts.verbosity >= 0:
-		log('WARNING', msg)
-	warnings += 1	
-
-def debug(msg):
-	if opts.verbosity >= 2:
-		log('DEBUG', msg)
-
-def info(msg):
-	if opts.verbosity >= 0:
-		print msg
-
-def log(label, msg):
-	'''Print the given message, prefixed with the given label (DEBUG,
-	WARNING, etc) to stderr.'''
-	sys.stderr.write("%s: %s\n" % (label, msg))
 
 def func_name(level=2):
 	'''Get the name of a function on the call stack.
@@ -70,7 +48,7 @@ def plist(p):
 	for item in p[1:]:
 		if item not in plist_ignore_tokens:
 			ret_list.append(item)
-	if opts.verbosity >= 2:
+	if loglevel == logging.DEBUG:
 		pp = pprint.PrettyPrinter(indent=2)
 		pp.pprint(ret_list)
 	return ret_list
@@ -84,61 +62,27 @@ def flatlist(p):
 			vals.append(item)
 	return vals
 
-def lex_error():
-	'''Register a lex error.'''
-	global lex_errors
-	lex_errors += 1
-
-def yacc_error():
-	'''Register a yacc error.'''
-	global yacc_errors
-	yacc_errors += 1
-
-def other_error():
-	'''Register an error that's neither due to lex or yacc, or is
-	indeterminate.'''
-	global other_errors
-	other_errors += 1
-
-def get_num_errors():
-	'''Get the number of lex errors + yacc errors + other_errors.'''
-	return lex_errors + yacc_errors + other_errors
-
-def get_num_warnings():
-	'''Return number of warnings.'''
-	return warnings
-
-#TODO: is this exception actually used?  If it isn't used, it can be removed.
-class FormatCheckError(Exception):
-	'''Parse error discovered while checking an instruction's format
-	against its opcode's listed format.'''
-	pass
-
-class ParseError(Exception):
-	'''General parse error.'''
-	pass
-
-def init_parser(opts_):
+def init_parser(parse_result):
 	'''Initialize lex and yacc. You can call asm_lint.yacc.parse() after you call this.
 		@param opts_ Program options, from command-line.
 	'''
 	# build lexer and parser
-	global lex_errors
-	global yacc_errors 
-	global other_errors 
-	global warnings
 	global lexer
 	global yacc
-	global opts
 	lexer = lex.lex()
 	yacc.yacc()
 
-	# init globals
-	lex_errors = 0
-	yacc_errors = 0
-	other_errors = 0
-	warnings = 0
-	opts = opts_
+	# Add loggers to file
+	global debug
+	global info
+	global warn
+	global error
+	global loglevel
+	debug = parse_result.debug
+	info = parse_result.info
+	warn = parse_result.warn
+	error = parse_result.error
+	loglevel = parse_result.logger.level
 
 # -----------------------------------------------------------------------------
 # Global data structures
@@ -244,7 +188,6 @@ def t_INCOMMENT_continue(t):
 def t_INCOMMENT_error(t):
 	error("Illegal character '%s'" % t.value[0])
 	t.lexer.skip(1)
-	lex_error()
 
 t_INCOMMENT_ignore = ""
 
@@ -411,7 +354,6 @@ def t_NEWLINE(t):
 def t_error(t):
 	error("Illegal character '%s'" % t.value[0])
 	t.lexer.skip(1)
-	lex_error()
 
 def p_file(p):
 	'''file : lines'''
@@ -777,7 +719,6 @@ def p_error(token):
 	else:
 		val = "'%s' (%s) on line %d" % (token.value, token.type, token.lineno)
 	error("Syntax error at token %s. Discarding rest of line..." % (val))
-	yacc_error()
 
 	if token is None:
 		yacc.restart()

@@ -14,6 +14,8 @@
 import sys
 from optparse import OptionParser, OptionGroup
 import unittest
+import asmlint
+import logging
 
 import tests.testregexes
 import tests.testcode
@@ -30,10 +32,14 @@ def main():
 	opt_parser.add_option("-u", "--unstable", action="store_true", dest="run_unstable",
 		default=False, help="Run unstable tests.")
 
-	opt_parser.set_defaults(verbosity=-1)
+	opt_parser.set_defaults(verbosity=0)
 	opt_parser.set_defaults(run_tests=[])
 
 	(opts, args) = opt_parser.parse_args()
+
+	if opts.verbosity != 0:
+		asmlint.addConsoleLogHandler()
+	asmlint.setLogLevel(opts.verbosity)
 
 	test_runner = TestRunner(opts)
 	was_successful = True
@@ -96,7 +102,6 @@ class TestRunner:
 		self.opts = opts
 	
 	def runTest(self, testClass):
-		testClass.verbosity = self.opts.verbosity
 		testClass.run_unstable = self.opts.run_unstable
 		suite = unittest.TestLoader().loadTestsFromTestCase(testClass)
 		return unittest.TextTestRunner(verbosity=2).run(suite)
