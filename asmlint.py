@@ -75,16 +75,11 @@ def main(argv):
 
 	opt_parser = ALOptionParser(usage="%prog [OPTIONS] [FILENAME]")
 
-	opt_parser.add_bool_option('check-registers', dest='check_regs',
-		help_true="Check for suspicious register names. (Default)",
-		help_false="Don't check for suspicious register names.")
-
 	opt_parser.add_option('-v', '--verbose', action="count", dest="verbosity", 
 		help="Increase verbosity of output.  Use multiple times to increase verbosity further.")
 	opt_parser.add_option('-q', '--quiet', action="store_true", dest="quiet", 
 		help="Silence output.")
 
-	opt_parser.set_defaults(check_regs=True)
 	opt_parser.set_defaults(verbosity=0)
 
 	input_file = sys.stdin

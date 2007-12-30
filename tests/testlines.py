@@ -40,7 +40,6 @@ class TestLines(unittest.TestCase):
 		'''This is a slightly ugly way of passing our custom options to
 		the test parser.'''
 		verbosity = None
-		check_regs = True
 
 		def __init__(self, container):
 			verbosity = container.verbosity
