@@ -30,18 +30,36 @@ def _nodeMap(tree, f, nodeClass):
 			_nodeMap(child, f, nodeClass)
 
 def saveOffset(parse_tree):
-
-	def checkSave(node):
-		if isinstance(node.children[1], ast.Integer):
-			offset = node.children[1].getValue()
+	def checkSave(saveNode):
+		if isinstance(saveNode.children[1], ast.Integer):
+			offset = saveNode.children[1].getValue()
 			if offset % 8 != 0:
 				warn("Save offset, line %d: Offset is %d, not a multiple of 8."
-					% (node.getLine(), offset))
+					% (saveNode.getLine(), offset))
 			if offset > -92:
 				warn("Save offset, line %d: Offset is %d, isn't <= -92."
-					% (node.getLine(), offset))
+					% (saveNode.getLine(), offset))
 			
 	_nodeMap(parse_tree.reduced_tree, checkSave, ast.Save)
 
+def branchDelaySlot(parse_tree):
+	def checkLabelInDelaySlot(branchNode):
+		delaySlotNode = branchNode.next
+		if delaySlotNode is None:
+			warn("Line %d: branch used as last instruction." %
+				branchNode.getLine())
 
-allChecks = [saveOffset]
+		if isinstance(delaySlotNode, ast.LabelDeclaration):
+			warn("Line %d: Label declaration in a branch delay slot." %
+				delaySlotNode.getLine())
+		elif isinstance(delaySlotNode, ast.Branch):
+			warn("Line %d: Branch in a branch delay slot." %
+				delaySlotNode.getLine())
+		elif isinstance(delaySlotNode, ast.Set):
+			warn("Line %d: Synthetic instruction that expands to multiple instructions used in a branch delay slot." %
+				delaySlotNode.getLine())
+			
+	_nodeMap(parse_tree.reduced_tree, checkLabelInDelaySlot, ast.Branch)
+
+
+allChecks = [saveOffset, branchDelaySlot ]

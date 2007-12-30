@@ -561,7 +561,7 @@ def p_mov(p):
 
 def p_set(p):
 	'''set : SET intexpr COMMA reg'''
-	p[0] = plist(p)
+	p[0] = ast.Set(p[2], p[4], lineno=p.lineno(1))
 
 def p_cmp(p):
 	'''cmp : CMP reg COMMA reg

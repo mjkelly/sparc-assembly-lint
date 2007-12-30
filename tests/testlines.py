@@ -60,6 +60,7 @@ class TestLines(unittest.TestCase):
 	def _runGood(self, *lines):
 		result = self._runParser(*lines)
 		self.assert_(result.get_num_errors() == 0)
+		self.assert_(result.get_num_warnings() == 0)
 		return result
 
 	def _runBad(self, *lines):
@@ -256,7 +257,7 @@ class TestLines(unittest.TestCase):
 		self._runBad('add	10, %l8, %l0')
 	
 	def testAnnulled(self):
-		self._runGood('bge,a	fooLabel')
+		self._runGood('bge,a	fooLabel', 'nop')
 
 	def testBadAnnulled(self):
 		self._runBad('bge,x	fooLabel')
@@ -277,6 +278,24 @@ class TestLines(unittest.TestCase):
 		self._runGood('EXTRA_VARS=7', 'STACK_SIZE = -( 92 + EXTRA_VARS ) & -8', 'save %sp, STACK_SIZE, %sp')
 		self._runWarn('save %sp, -95, %sp')
 		self._runWarn('save %sp, 96, %sp')
+		self._runWarn('EXTRA_VARS=7', 'STACK_SIZE = -( 92 + EXTRA_VARS ) & -7', 'save %sp, STACK_SIZE, %sp')
+
+	def testLabelAsDelayInstruction(self):
+		self._runWarn('bge,a	fooLabel', 'label:')
+		self._runWarn('bge	fooLabel', 'label:')
+
+	def testBranchAsDelayInstruction(self):
+		self._runWarn('bge,a	fooLabel', 'bge,a	fooLabel', 'nop')
+		self._runWarn('bl	fooLabel', 'be	fooLabel', 'nop')
+
+	def testBranchAsDelayInstruction(self):
+		self._runWarn('bge	fooLabel', 'set 0, %l0')
+	
+	def testBranchAsLastInstruction(self):
+		self._runWarn('bge,a	fooLabel', '')
+		self._runWarn('mov 1, %l0', 
+			'bge,a	fooLabel', '')
+		
 	
 	# Stuff I don't use or run into regularly, that might otherwise break
 	# without me noticing. NOT floating point stuff. That deserves its own
@@ -289,7 +308,7 @@ class TestLines(unittest.TestCase):
 		self._runGood('.file	"foo"')
 	
 	def testEmptyString(self):
-		self._runGood('')
+		self._runWarn('')
 
 
 if __name__ == '__main__':

@@ -301,7 +301,7 @@ class Save(Node):
 class Branch(Node):
 	pass
 
-class AnnulledBranch(Node):
+class AnnulledBranch(Branch):
 	pass
 
 class Address(Node):
@@ -320,6 +320,9 @@ class Address(Node):
 			return "<%s=%s%s%s>" % (self.__class__.__name__, self.base, self.op, self.offset)
 		else:
 			return "<%s=%s>" % (self.__class__.__name__, self.base)
+
+class Set(Node):
+	pass
 
 class Instruction(Node):
 	def __init__(self, name, *children, **keywords):
