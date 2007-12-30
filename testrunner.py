@@ -15,9 +15,8 @@ import sys
 from optparse import OptionParser, OptionGroup
 import unittest
 
-from tests.testregexes import TestRegexes
-from tests.testlines import TestLines
-#from tests.unit_tests import UnitTests
+import tests.testregexes
+import tests.testcode
 
 def main():
 	opt_parser = OptionParser(usage="%prog [OPTIONS]")
@@ -95,18 +94,21 @@ class TestRunner:
 
 	def __init__(self, opts):
 		self.opts = opts
-
-	def runtest_regexes(self):
-		TestRegexes.verbosity = self.opts.verbosity
-		TestRegexes.run_unstable = self.opts.run_unstable
-		suite = unittest.TestLoader().loadTestsFromTestCase(TestRegexes)
+	
+	def runTest(self, testClass):
+		testClass.verbosity = self.opts.verbosity
+		testClass.run_unstable = self.opts.run_unstable
+		suite = unittest.TestLoader().loadTestsFromTestCase(testClass)
 		return unittest.TextTestRunner(verbosity=2).run(suite)
+		
+	def runtest_regexes(self):
+		return self.runTest(tests.testregexes.TestRegexes)
 
 	def runtest_lines(self):
-		TestLines.verbosity = self.opts.verbosity
-		TestLines.run_unstable = self.opts.run_unstable
-		suite = unittest.TestLoader().loadTestsFromTestCase(TestLines)
-		return unittest.TextTestRunner(verbosity=2).run(suite)
+		return self.runTest(tests.testcode.TestLines)
+	
+	def runtest_files(self):
+		return self.runTest(tests.testcode.TestFiles)
 
 if __name__ == '__main__':
 	sys.exit(main())

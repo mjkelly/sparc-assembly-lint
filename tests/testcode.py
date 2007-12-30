@@ -29,7 +29,8 @@ def unstable(f):
 			print >> sys.stderr, "[SKIPPNG UNSTABLE TEST] ",
 	return inner
 
-class TestLines(unittest.TestCase):
+	
+class TestCode(unittest.TestCase):
 	# If run from testrunner.py, this is overridden with testrunner's
 	# value. (testrunner ALWAYS sets it.)
 	verbosity = -1
@@ -44,9 +45,8 @@ class TestLines(unittest.TestCase):
 		def __init__(self, container):
 			verbosity = container.verbosity
 
-	# Run the linter on a single line.
-	# @return number of errors found
-	def _runParser(self, *lines):
+	def runParser(self, *lines):
+		'''Run the linter on the passed in lines.  Returns a result object containing the parse tree and more.'''
 		try:
 			input = '\n'.join(list(lines))
 			result = asmlint.run(StringIO(input), TestLines.BogusOptions(self),
@@ -57,18 +57,18 @@ class TestLines(unittest.TestCase):
 		return result
 
 	def _runGood(self, *lines):
-		result = self._runParser(*lines)
+		result = self.runParser(*lines)
 		self.assert_(result.get_num_errors() == 0)
 		self.assert_(result.get_num_warnings() == 0)
 		return result
 
 	def _runBad(self, *lines):
-		result = self._runParser(*lines)
+		result = self.runParser(*lines)
 		self.assert_(result.get_num_errors() != 0)
 		return result
 
 	def _runWarn(self, *lines):
-		result = self._runParser(*lines)
+		result = self.runParser(*lines)
 		self.assert_(result.get_num_warnings() != 0)
 		return result
 
@@ -76,6 +76,26 @@ class TestLines(unittest.TestCase):
 		for instr in parse_tree.children:
 			if isinstance(instr, ast.MacroDeclaration) and instr.name.value == name:
 				return instr.value.reduce()
+
+
+
+
+class TestLines(TestCode):
+	def runParser(self, *lines):
+		'''Run the lines through the parser by inserting them inside of a main declaration'''
+		start = [ 
+			'.section ".text"', 
+			'.global main',
+			'main:',
+			'save	%sp, -96, %sp',
+       		]
+       		end = [
+			'ret',
+			'restore'
+		]
+		code = start + list(lines) + end
+		return TestCode.runParser(self, *code)
+
 
 	def testCommand(self):
 		self._runGood('add     %o0, 10, %l0')
@@ -103,12 +123,9 @@ class TestLines(unittest.TestCase):
 	
 	def testMacroAssignment(self):
 		result = self._runGood('MYINT=0xA')
-		macro = result.parse_tree[0]
-		self.assert_(type(macro),ast.MacroDeclaration) 
-		self.assert_(macro.name.value == 'MYINT') 
-		integer = macro.value
-		self.assert_(type(integer) == ast.Integer)
-		self.assert_(integer.value == 0xA)
+		myint = self._get_macro_value('MYINT', result.parse_tree)
+		self.assert_(type(myint) == ast.Integer)
+		self.assert_(myint.value == 0xA)
 	
 	def testMacroAssignmentToHex(self):
 		self._runGood('A=0x41')
@@ -290,10 +307,6 @@ class TestLines(unittest.TestCase):
 	def testBranchAsDelayInstruction(self):
 		self._runWarn('bge	fooLabel', 'set 0, %l0')
 	
-	def testBranchAsLastInstruction(self):
-		self._runWarn('bge,a	fooLabel', '')
-		self._runWarn('mov 1, %l0', 
-			'bge,a	fooLabel', '')
 		
 	
 	# Stuff I don't use or run into regularly, that might otherwise break
@@ -306,9 +319,15 @@ class TestLines(unittest.TestCase):
 		self._runGood('.type	foo, #function')
 		self._runGood('.file	"foo"')
 	
+
+class TestFiles(TestCode):
+	def testBranchAsLastInstruction(self):
+		self._runWarn('bge,a	fooLabel', '')
+		self._runWarn('mov 1, %l0', 
+			'bge,a	fooLabel', '')
+
 	def testEmptyString(self):
 		self._runWarn('')
-
 
 if __name__ == '__main__':
 	unittest.main()

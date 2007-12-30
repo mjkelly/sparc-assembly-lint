@@ -108,6 +108,7 @@ def get_num_warnings():
 	'''Return number of warnings.'''
 	return warnings
 
+#TODO: is this exception actually used?  If it isn't used, it can be removed.
 class FormatCheckError(Exception):
 	'''Parse error discovered while checking an instruction's format
 	against its opcode's listed format.'''
