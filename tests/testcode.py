@@ -37,6 +37,17 @@ class TestCode(unittest.TestCase):
 	# Whether to run tests that test nonexistant or future functionality.
 	run_unstable = False
 
+	basicStart = [ 
+		'.section ".text"', 
+		'.global main',
+		'main:',
+		'save	%sp, -96, %sp',
+	]
+	basicEnd = [
+		'ret',
+		'restore'
+	]
+
 	class BogusOptions:
 		'''This is a slightly ugly way of passing our custom options to
 		the test parser.'''
@@ -70,6 +81,7 @@ class TestCode(unittest.TestCase):
 	def _runWarn(self, *lines):
 		result = self.runParser(*lines)
 		self.assert_(result.get_num_warnings() != 0)
+		self.assert_(result.get_num_errors() == 0)
 		return result
 
 	def _get_macro_value(self, name, parse_tree):
@@ -83,17 +95,7 @@ class TestCode(unittest.TestCase):
 class TestLines(TestCode):
 	def runParser(self, *lines):
 		'''Run the lines through the parser by inserting them inside of a main declaration'''
-		start = [ 
-			'.section ".text"', 
-			'.global main',
-			'main:',
-			'save	%sp, -96, %sp',
-       		]
-       		end = [
-			'ret',
-			'restore'
-		]
-		code = start + list(lines) + end
+		code = self.basicStart + list(lines) + self.basicEnd
 		return TestCode.runParser(self, *code)
 
 
@@ -322,9 +324,11 @@ class TestLines(TestCode):
 
 class TestFiles(TestCode):
 	def testBranchAsLastInstruction(self):
-		self._runWarn('bge,a	fooLabel', '')
-		self._runWarn('mov 1, %l0', 
-			'bge,a	fooLabel', '')
+		basicStart = tuple(self.basicStart)
+		instr1 = self.basicStart + [ 'bge,a fooLabel', '']
+		instr2 = self.basicStart + ['mov 1, %l0', 'bge,a fooLabel']
+		self._runWarn(*instr1)
+		self._runWarn(*instr2)
 
 	def testEmptyString(self):
 		self._runWarn('')
