@@ -12,22 +12,6 @@
 
 import ast
 
-def _nodeMap(tree, f, nodeClass):
-	'''Call f on all nodes of class nodeClass in parse tree tree. If
-	   nodeClass = None, f is called on all nodes.'''
-	if tree is None:
-		return
-	
-	if nodeClass is None:
-		f(tree)
-		for child in tree.children:
-			_nodeMap(child, f, nodeClass)
-	elif isinstance(tree, nodeClass):
-		f(tree)
-	else:
-		for child in tree.children:
-			_nodeMap(child, f, nodeClass)
-
 def saveOffset(parse_result):
 	warn = parse_result.warn
 	def checkSave(saveNode):
@@ -40,7 +24,7 @@ def saveOffset(parse_result):
 				warn("Save offset, line %d: Offset is %d, isn't <= -92."
 					% (saveNode.getLine(), offset))
 			
-	_nodeMap(parse_result.reduced_tree, checkSave, ast.Save)
+	parse_result.reduced_tree.map(checkSave, ast.Save)
 
 def branchDelaySlot(parse_result):
 	warn = parse_result.warn
@@ -60,7 +44,7 @@ def branchDelaySlot(parse_result):
 			warn("Line %d: Synthetic instruction that expands to multiple instructions used in a branch delay slot." %
 				delaySlotNode.getLine())
 			
-	_nodeMap(parse_result.reduced_tree, checkLabelInDelaySlot, ast.Branch)
+	parse_result.reduced_tree.map(checkLabelInDelaySlot, ast.Branch)
 
 
 allChecks = [saveOffset, branchDelaySlot ]

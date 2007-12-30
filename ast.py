@@ -35,6 +35,20 @@ class Node(object):
 	def reduce(self):
 		self.children = map(lambda x : x.reduce(), self.children)
 		return self
+
+	def map(self, f, nodeClass):
+		'''Call f on all nodes of class nodeClass desending from (and
+		   including) this node. If nodeClass = None, f is called on
+                   all nodes.'''
+		if nodeClass is None:
+			f(self)
+			for child in self.children:
+				child.map(f, nodeClass)
+		elif isinstance(self, nodeClass):
+			f(self)
+		else:
+			for child in self.children:
+				child.map(f, nodeClass)
 	
 	def __getitem__(self, key):
 		if isinstance(key, slice):
@@ -79,6 +93,8 @@ class File(Node):
 				makeParentPointers(child)
 
 		makeParentPointers(self)
+	
+
 	
 	def reduce(self):
 		cp = copy.deepcopy(self)

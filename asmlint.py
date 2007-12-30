@@ -113,7 +113,7 @@ def run(handle, opts, treecheckers = []):
 	parse_tree = None
 
 	input = handle.read()
-	# hack to avoid an error from PLY on empty input.
+	# avoid an error from PLY on empty input.
 	if not input:
 		result.warn('Empty input')
 		input = ' '
@@ -121,8 +121,9 @@ def run(handle, opts, treecheckers = []):
 	parse_tree = yacc.parse(input, tracking=True)
 	
 	result.add_parse_tree(parse_tree)
-	for checker in treecheckers:
-		checker(result)
+	if not parse_tree is None:
+		for checker in treecheckers:
+			checker(result)
 	return result
 
 def setLogLevel(verbosity):
