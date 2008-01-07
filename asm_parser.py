@@ -422,13 +422,18 @@ def p_instruction(p):
 		# instruction from it
 		args = p[1][1:]
 		kwargs = { 'lineno' : p.lineno(1) }
-		p[0] = ast.Instruction(*args, **kwargs)
+		p[0] = ast.GenericInstruction(*args, **kwargs)
 	else:
 		p[0] = p[1]
 
 def p_noargs(p):
 	'''noargs : NOARGS'''
-	p[0] = plist(p)
+	op = p[1]
+	lineno = p.lineno(1)
+	if op == '.popsection':
+		p[0] = ast.PopSection(lineno=lineno)
+	else:
+		p[0] = plist(p)
 
 def p_ibranch(p):
 	'''branch : BRANCH intexpr'''
@@ -550,13 +555,20 @@ def p_call(p):
 def p_dotsection(p):
 	'''dotsection : DOTSECTION string
 	              | DOTSECTION string COMMA attribute'''
-	p[0] = plist(p)
+	name = p[2]
+	attribute = None
+	if len(p) == 5:
+		attribute = p[4]
+	p[0] = ast.SectionDeclaration(name, attribute, lineno=p.lineno(1))
 
 def p_pushsection(p):
 	'''pushsection : PUSHSECTION string
 	              | PUSHSECTION string COMMA attribute'''
-	p[0] = plist(p)
-
+	name = p[2]
+	attribute = None
+	if len(p) == 5:
+		attribute = p[4]
+	p[0] = ast.PushSection(name, attribute, lineno=p.lineno(1))
 
 def p_attribute(p):
 	'''attribute : HASH ATTRNAME'''
@@ -583,14 +595,13 @@ def p_anythinglistarg(p):
 	                   | reg COMMA anythinglistarg'''
 	p[0] = plist(p)
 
-def p_type(p):
-	'''type : HASH TYPENAME'''
-	p[0] = ast.Type(p[2], lineno=p.lineno(1))
-
-
 def p_dottype(p):
 	'''dottype : DOTTYPE intexpr COMMA type'''
 	p[0] = plist(p)
+
+def p_type(p):
+	'''type : HASH TYPENAME'''
+	p[0] = ast.Type(p[2], lineno=p.lineno(1))
 
 def p_threereg(p):
 	'''threereg : THREEREG reg COMMA reg COMMA reg'''

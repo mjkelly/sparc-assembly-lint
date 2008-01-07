@@ -11,7 +11,7 @@
 # Thu Aug 16 01:20:52 PDT 2007
 # -----------------------------------------------------------------
 
-from optparse import OptionParser, OptionGroup
+from optparse import OptionParser
 import sys
 import pprint
 
@@ -144,7 +144,7 @@ def addConsoleLogHandler():
 	
 def main(argv):
 
-	opt_parser = ALOptionParser(usage="%prog [OPTIONS] [FILENAME]")
+	opt_parser = OptionParser(usage="%prog [OPTIONS] [FILENAME]")
 
 	opt_parser.add_option('-v', '--verbose', action="count", dest="verbosity", 
 		help="Increase verbosity of output.  Use multiple times to increase verbosity further.")

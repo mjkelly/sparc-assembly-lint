@@ -6,6 +6,8 @@ Errors to catch:
 - no label with same name as filename
 - check for correct .section (.data for .word, etc, .section for instrs)
 - check for .global
+- reserve sudo-op
+- A section is declared
 - Check alignment...
   This works:
 	fmt: .asciz "x = %x\n"

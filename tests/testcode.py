@@ -45,6 +45,8 @@ class TestCode(unittest.TestCase):
 		'restore'
 	]
 
+	basicFile = basicStart + basicEnd
+
 	def runParser(self, *lines):
 		'''Run the linter on the passed in lines.  Returns a result object containing the parse tree and more.'''
 		input = '\n'.join(list(lines))
@@ -172,9 +174,6 @@ class TestLines(TestCode):
 
 	def testEscapedChar(self):
 		self._runGood(r"mov	'\n', %l0")
-	
-	def testSectionData(self):
-		self._runGood('.section	".data"')
 	
 	def testGlobalMain(self):
 		self._runGood('.global	main, foo, bar')
@@ -304,15 +303,50 @@ class TestLines(TestCode):
 	
 
 class TestFiles(TestCode):
+	sectionNames = [
+		'.bss', 
+		'.comment', 
+		'.data', 
+		'.data', 
+		'.debug', 
+		'.fini', 
+		'.init', 
+		'.rodata', 
+		'.rodata1', 
+		'.text', 
+		'.line', 
+		'.note' 
+	]
+
 	def testBranchAsLastInstruction(self):
+		'''Branch as last instruction'''
 		basicStart = tuple(self.basicStart)
 		instr1 = self.basicStart + [ 'bge,a fooLabel', '']
 		instr2 = self.basicStart + ['mov 1, %l0', 'bge,a fooLabel']
 		self._runWarn(*instr1)
 		self._runWarn(*instr2)
-
+	
 	def testEmptyString(self):
+		'''Parsing an empty string generates a warning'''
 		self._runWarn('')
+
+	def testGoodSections(self):
+		'''All the ways to declare sections'''
+		code = []
+		code += self.sectionNames
+		code += [ '.section "%s"' % x for x in self.sectionNames ]
+		code += self.basicFile
+		self._runGood(*code)
+
+	@unstable
+	def testInstructionInTextSectionOnly(self):
+		'''Instructions only go in the text section'''
+		code = []
+		badSectionsForCode = self.sectionNames
+		badSectionsForCode.remove('.text')
+		code += [ '.section "%s\nmov %%g0, %%g0"' % x for x in badSectionsForCode ]
+		self._runWarn(*code)
+
 
 if __name__ == '__main__':
 	unittest.main()

@@ -12,7 +12,7 @@
 
 import pprint
 import copy
-
+from section_stack import SectionStack
 
 class Node(object):
 	'''Common methods for all AST nodes. All AST classes should inherit from this.'''
@@ -20,6 +20,7 @@ class Node(object):
 		'''Create a node with children.  Store the line number'''
 		self.children = list(children)
 		self.lineno = Node._getLineNumber(keywords, self.__class__.__name__)
+		self._section = None
 
 	@staticmethod
 	def _getLineNumber(hash, className):
@@ -68,6 +69,19 @@ class File(Node):
 		Node.__init__(self, *children, **keywords)
 		self.parent = None
 
+		sectionStack = SectionStack()
+		def setSection(node):
+			if isinstance(node, SectionDeclaration):
+				sectionStack.settop(node)
+			elif isinstance(node, PushSection):
+				sectionStack.push(node)
+			elif isinstance(node, PopSection):
+				sectionStack.pop()
+			else:
+				node._section = sectionStack.top()
+		self.map(setSection, None)
+
+
 		for (index,child) in enumerate(self.children):
 			if not isinstance(child, Node):
 				raise RuntimeError("Bad child list in File node: %s" % child)
@@ -93,11 +107,13 @@ class File(Node):
 				makeParentPointers(child)
 
 		makeParentPointers(self)
-	
 
-	
+
 	def reduce(self):
+		# reduce
 		cp = copy.deepcopy(self)
+		reduced = Node.reduce(cp)
+
 		return Node.reduce(cp)
 
 
@@ -311,15 +327,6 @@ class UnaryNop(UnaryExpression):
 	def op(self, arg):
 		return arg
 
-class Save(Node):
-	pass
-
-class Branch(Node):
-	pass
-
-class AnnulledBranch(Branch):
-	pass
-
 class Address(Node):
 	def __init__(self, base, *children, **keywords):
 		Node.__init__(self, **keywords)
@@ -337,10 +344,41 @@ class Address(Node):
 		else:
 			return "<%s=%s>" % (self.__class__.__name__, self.base)
 
-class Set(Node):
+class SectionDeclaration(Node):
+	def __init__(self, name, attribute, **keywords):
+		Node.__init__(self, **keywords)
+		self.name = name
+		self.attribute = attribute
+
+	def __str__(self):
+		if self.attribute is None:
+			return "<%s:%s>" % (self.__class__.__name__, self.name)
+		else:
+			return "<%s:%s,%s>" % (self.__class__.__name__, self.name, self.attribute)
+
+class PushSection(SectionDeclaration):
+	pass
+
+class PopSection(Node):
 	pass
 
 class Instruction(Node):
+	'''All instructions must inherit from this class'''
+	pass
+
+class Set(Instruction):
+	pass
+
+class Save(Instruction):
+	pass
+
+class Branch(Instruction):
+	pass
+
+class AnnulledBranch(Branch):
+	pass
+
+class GenericInstruction(Instruction):
 	def __init__(self, name, *children, **keywords):
 		Node.__init__(self, *children, **keywords)
 		self.name = name
