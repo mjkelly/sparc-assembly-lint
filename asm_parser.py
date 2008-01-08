@@ -27,6 +27,8 @@ import re
 # Helper Functions
 # -----------------------------------------------------------------------------
 
+class ParseError(RuntimeError): pass
+
 def print_token(t):
 	debug("%s=%s" % (t.type, t.value))
 
@@ -325,7 +327,7 @@ def t_OR(t):
 	return t
 
 def t_NOT(t):
-	r'~'
+	'~'
 	print_token(t)
 	return t
 
@@ -729,21 +731,6 @@ def p_error(token):
 		val = "<NO TOKEN>";
 	else:
 		val = "'%s' (%s) on line %d" % (token.value, token.type, token.lineno)
-	error("Syntax error at token %s. Discarding rest of line..." % (val))
-
-	if token is None:
-		yacc.restart()
-		return None
-
-	while True:
-		tok = yacc.token()
-		debug('Reading token %s' % tok)
-		if tok is None:
-			debug('tok was none')
-			yacc.errok()
-			return tok
-		elif tok.type == 'NEWLINE':
-			debug('tok is newline')
-			yacc.errok()
-			return tok
-
+	error("Syntax error at token %s." % (val))
+	
+	raise ParseError()

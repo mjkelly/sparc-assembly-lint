@@ -8,6 +8,7 @@ Errors to catch:
 - check for .global
 - reserve sudo-op
 - A section is declared
+- Maximum value of a move
 - Check alignment...
   This works:
 	fmt: .asciz "x = %x\n"

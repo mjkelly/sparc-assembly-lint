@@ -55,19 +55,24 @@ class TestCode(unittest.TestCase):
 
 	def _runGood(self, *lines):
 		result = self.runParser(*lines)
-		self.assert_(result.get_num_errors() == 0)
-		self.assert_(result.get_num_warnings() == 0)
+		num_errors = result.get_num_errors()
+		num_warnings = result.get_num_warnings()
+		self.assert_(num_errors == 0, str(num_errors))
+		self.assert_(num_warnings == 0, str(num_warnings))
 		return result
 
 	def _runBad(self, *lines):
 		result = self.runParser(*lines)
-		self.assert_(result.get_num_errors() != 0)
+		num_errors = result.get_num_errors()
+		self.assert_(num_errors != 0, str(num_errors))
 		return result
 
 	def _runWarn(self, *lines):
 		result = self.runParser(*lines)
-		self.assert_(result.get_num_warnings() != 0)
-		self.assert_(result.get_num_errors() == 0)
+		num_errors = result.get_num_errors()
+		num_warnings = result.get_num_warnings()
+		self.assert_(num_warnings != 0, str(num_warnings))
+		self.assert_(num_errors == 0, str(num_errors))
 		return result
 
 	def _get_macro_value(self, name, parse_tree):
@@ -251,8 +256,8 @@ class TestLines(TestCode):
 		self._runBad('call	printf, 1, 2',
 				'mov	%l1, %l2')
 	
-	def testBadReg1(self):
-		self._runBad('add	10, %l8, %l0')
+	def testBadArgumentType(self):
+		self._runBad('add	10, %l7, %l0')
 	
 	def testAnnulled(self):
 		self._runGood('bge,a	fooLabel', 'nop')
@@ -301,6 +306,41 @@ class TestLines(TestCode):
 		self._runGood('.type	foo, #function')
 		self._runGood('.file	"foo"')
 	
+class TestSingleErrorOnSyntax(TestCode):
+	def runSingleError(self, *lines):
+		result = self.runParser(*lines)
+		num_errors = result.get_num_errors()
+		num_warnings = result.get_num_warnings()
+		self.assert_(num_warnings == 0, str(num_warnings))
+		self.assert_(num_errors == 1, "Errors: " + str(num_errors) + "\n" + "\n".join(lines))
+		return result
+	
+	def testBadRegister(self):
+		code = self.basicStart + [ 'mov %ll, %l1', 'mov %l0, %l1' ]
+		result = self.runSingleError(*code)
+		
+	def testBadBranch(self):
+		code = self.basicStart + [ 'bge,a, foo', 'mov %l0, %l1' ]
+		result = self.runSingleError(*code)
+
+	def testBadOperand(self):
+		code = self.basicStart + [ 'add 10, %l8, %l0', 'add %l1, %l1, %l0' ]
+		result = self.runSingleError(*code)
+	
+	def testBadOperand(self):
+		code = self.basicStart + [ 'not', 'add %l1, %l1, %l0' ]
+		result = self.runSingleError(*code)
+
+	def testBadOperand(self):
+		code =  [ 
+			'.section ".text"', 
+			'.global main',
+			'main:',
+			'save	%sp, -(92 + 2) & & -8, %sp', 
+			'add %l1, %l1, %l0' 
+		]
+		result = self.runSingleError(*code)
+
 
 class TestFiles(TestCode):
 	sectionNames = [
@@ -318,9 +358,9 @@ class TestFiles(TestCode):
 		'.note' 
 	]
 
+
 	def testBranchAsLastInstruction(self):
 		'''Branch as last instruction'''
-		basicStart = tuple(self.basicStart)
 		instr1 = self.basicStart + [ 'bge,a fooLabel', '']
 		instr2 = self.basicStart + ['mov 1, %l0', 'bge,a fooLabel']
 		self._runWarn(*instr1)

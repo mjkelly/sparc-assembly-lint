@@ -15,7 +15,7 @@ from optparse import OptionParser
 import sys
 import pprint
 
-from asm_parser import yacc, init_parser
+from asm_parser import yacc, init_parser, ParseError
 import ast
 import treechecker
 
@@ -118,7 +118,10 @@ def run(handle, opts, treecheckers = []):
 		result.warn('Empty input')
 		input = ' '
 
-	parse_tree = yacc.parse(input, tracking=True)
+	try:
+		parse_tree = yacc.parse(input, tracking=True)
+	except ParseError:
+		pass
 	
 	result.add_parse_tree(parse_tree)
 	if not parse_tree is None:

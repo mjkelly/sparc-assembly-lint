@@ -46,5 +46,4 @@ def branchDelaySlot(parse_result):
 			
 	parse_result.reduced_tree.map(checkLabelInDelaySlot, ast.Branch)
 
-
 allChecks = [saveOffset, branchDelaySlot ]

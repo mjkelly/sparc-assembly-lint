@@ -112,6 +112,9 @@ class TestRunner:
 	def runtest_lines(self):
 		return self.runTest(tests.testcode.TestLines)
 	
+	def runtest_single_error(self):
+		return self.runTest(tests.testcode.TestSingleErrorOnSyntax)
+
 	def runtest_files(self):
 		return self.runTest(tests.testcode.TestFiles)
 
