@@ -291,6 +291,9 @@ reserved = {
 	'.xword'        :       {'type':'INTLIST'},
 	'.xstabs'       :       {'type':'ANYTHINGLIST'},
 
+}
+
+section_declarations = {
 	'.bss'          :       {'type':'NOARGS'},
 	'.comment'      :       {'type':'NOARGS'},
 	'.data'         :       {'type':'NOARGS'},
@@ -304,4 +307,4 @@ reserved = {
 	'.line'         :       {'type':'NOARGS'},
 	'.note'         :       {'type':'NOARGS'},
 }
-
+reserved.update(section_declarations)

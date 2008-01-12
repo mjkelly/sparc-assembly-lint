@@ -10,7 +10,7 @@
 # Wed Nov 14 20:34:57 PST 2007
 # -----------------------------------------------------------------------------
 
-from symbols import reserved
+from symbols import reserved, section_declarations
 import ast
 
 from optparse import OptionParser, OptionGroup
@@ -237,6 +237,7 @@ def t_INT(t):
 t_INT.__doc__ = int_regex
 
 def t_STRING(t):
+	t.value = t.value[1:-1]   # Strip off quote marks
 	print_token(t)
 	return t
 t_STRING.__doc__ = string_regex
@@ -432,7 +433,11 @@ def p_noargs(p):
 	'''noargs : NOARGS'''
 	op = p[1]
 	lineno = p.lineno(1)
-	if op == '.popsection':
+	if op in section_declarations:
+		name = op
+		attribute = None
+		p[0] = ast.SectionDeclaration(name, attribute, lineno=p.lineno(1))
+	elif op == '.popsection':
 		p[0] = ast.PopSection(lineno=lineno)
 	else:
 		p[0] = plist(p)
@@ -557,7 +562,7 @@ def p_call(p):
 def p_dotsection(p):
 	'''dotsection : DOTSECTION string
 	              | DOTSECTION string COMMA attribute'''
-	name = p[2]
+	name = p[2].getValue()
 	attribute = None
 	if len(p) == 5:
 		attribute = p[4]

@@ -58,7 +58,7 @@ class Node(object):
 	
         def __str__(self):
 		strlist = map(str, self.children)
-                return "<%s:%s>" % (self.__class__.__name__, ':'.join(strlist))
+                return "<%s:%s[%s]>" % (self.__class__.__name__, ':'.join(strlist), self._section)
 
 	def __repr__(self):
 		'''pprint uses __repr__, not __str__, so make them the same.'''
@@ -68,8 +68,10 @@ class File(Node):
 	def __init__(self, *children, **keywords):
 		Node.__init__(self, *children, **keywords)
 		self.parent = None
+		self.sections = {}
 
 		sectionStack = SectionStack()
+		sectionStack.push(SectionDeclaration('.text', None, lineno=0))
 		def setSection(node):
 			if isinstance(node, SectionDeclaration):
 				sectionStack.settop(node)
@@ -81,6 +83,18 @@ class File(Node):
 				node._section = sectionStack.top()
 		self.map(setSection, None)
 
+		def addSections(node):
+			if isinstance(node, File):
+				pass
+			if isinstance(node, SectionDeclaration):
+				pass
+			else:
+				sectionName = node._section.getName()
+				if not hasattr(self.sections, sectionName):
+					self.sections[sectionName] = []
+				self.sections[sectionName].append(node)
+		
+		self.map(addSections, None)
 
 		for (index,child) in enumerate(self.children):
 			if not isinstance(child, Node):
@@ -115,8 +129,7 @@ class File(Node):
 		reduced = Node.reduce(cp)
 
 		return Node.reduce(cp)
-
-
+	
 class MacroDeclaration(Node):
 	def __init__(self, name, value, **keywords):
 		'''New Macro, "name=value".
@@ -344,17 +357,17 @@ class Address(Node):
 		else:
 			return "<%s=%s>" % (self.__class__.__name__, self.base)
 
-class SectionDeclaration(Node):
+class SectionDeclaration(NameContainer):
 	def __init__(self, name, attribute, **keywords):
 		Node.__init__(self, **keywords)
-		self.name = name
+		self.value = name
 		self.attribute = attribute
 
 	def __str__(self):
 		if self.attribute is None:
-			return "<%s:%s>" % (self.__class__.__name__, self.name)
+			return "<%s:%s>" % (self.__class__.__name__, self.value)
 		else:
-			return "<%s:%s,%s>" % (self.__class__.__name__, self.name, self.attribute)
+			return "<%s:%s,%s>" % (self.__class__.__name__, self.value, self.attribute)
 
 class PushSection(SectionDeclaration):
 	pass

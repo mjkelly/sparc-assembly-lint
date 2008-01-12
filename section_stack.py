@@ -13,11 +13,9 @@
 
 class SectionStack(object):
 	'''Section stack object to mimic the behavior of the section stack used by the assembler.'''
-	default_section = '.text'
 	def __init__(self):
 		'''Creates stack and puts the default section on the stack'''
 		self.stack = list()
-		self.push(self.default_section)
 
 	def _getTopIndex(self):
 		'''Get the array index of the top of the stack'''
