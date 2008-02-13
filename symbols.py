@@ -61,6 +61,10 @@ reserved = {
 	'ba'            :       {'type':'BRANCH'},
 	'b'             :       {'type':'BRANCH'},
 
+	# aliases for bg and bl; accepted by gcc
+	'bgt'          :       {'type':'BRANCH'},
+	'blt'          :       {'type':'BRANCH'},
+
 	# branch on coprocessor condition codes
 	'cbn'           :       {'type':'BRANCH'},
 	'cb3'           :       {'type':'BRANCH'},

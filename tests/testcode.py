@@ -314,7 +314,6 @@ class TestLines(TestCode):
 		self._runWarn('.word 1')
 		self._runWarn('.xword 1')
 		self._runWarn('.skip 1')
-		
 	
 	# Stuff I don't use or run into regularly, that might otherwise break
 	# without me noticing. NOT floating point stuff. That deserves its own
@@ -325,6 +324,10 @@ class TestLines(TestCode):
 		self._runGood('dec	42, %l1')
 		self._runGood('.type	foo, #function')
 		self._runGood('.file	"foo"')
+
+	def testBranchAliases(self):
+		self._runGood('bgt	label')
+		self._runGood('blt	label')
 	
 class TestSingleErrorOnSyntax(TestCode):
 	def runSingleError(self, *lines):
