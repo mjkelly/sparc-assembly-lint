@@ -61,7 +61,8 @@ reserved = {
 	'ba'            :       {'type':'BRANCH'},
 	'b'             :       {'type':'BRANCH'},
 
-	# aliases for bg and bl; accepted by gcc
+	# aliases for branches; accepted by gcc
+	'beq'          :       {'type':'BRANCH'},
 	'bgt'          :       {'type':'BRANCH'},
 	'blt'          :       {'type':'BRANCH'},
 
@@ -191,11 +192,17 @@ reserved = {
 	'ld'            :       {'type':'LOAD'},
 	'ldd'           :       {'type':'LOAD'},
 
+	'ldf'           :       {'type':'LOAD'},
+	'lddf'          :       {'type':'LOAD'},
+
 	# TODO: list from memory. needs to be expanded.
 	'st'            :       {'type':'STORE'},
 	'stb'           :       {'type':'STORE'},
 	'sth'           :       {'type':'STORE'},
 	'std'           :       {'type':'STORE'},
+
+	'stf'           :       {'type':'STORE'},
+	'sdtf'          :       {'type':'STORE'},
 # these are also loads, but have different formats:
 #	'ldf'           :       'LOAD',
 #	'ldfsr'         :       'LOAD',
