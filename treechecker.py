@@ -46,4 +46,67 @@ def branchDelaySlot(parse_result):
 			
 	parse_result.reduced_tree.map(checkLabelInDelaySlot, ast.Branch)
 
-allChecks = [saveOffset, branchDelaySlot ]
+def wrongSection(parse_result):
+	'''Check for instructions in the wrong section. This is really hacky,
+	because Michael wants to go to sleep.'''
+	warn = parse_result.warn
+
+	# these should only occur in the BSS section, and nowhere but BSS
+	# this is INTLIST -> GenericInstruction
+	bss_only = [".skip"]
+
+	# these should only occur in the data section, and nowhere but data
+	# these are all INTLIST, FLOATLIST, or STRINGLIST -> GenericInstruction
+	data_only = [".ascii", ".asciz", ".byte", ".double", ".half", ".nword",
+		".quad", ".single", ".uahalf", ".uaword", ".word", ".xword"]
+	
+	# list of sections with errors to avoid multiple-reporting
+	reported_sections = {}
+
+	# this is a list so we can increment it inside functions
+	declared_sections = [0]
+	
+	def wrongSectionWarning(instrNode):
+		section = instrNode._section.getName()
+		if not reported_sections.has_key(section):
+			reported_sections[section] = True
+			warn("Line %d: Illegal instruction for %s section. (Only one error reported per section.)"
+				% (instrNode.getLine(), section))
+
+	def checkWrongSection(instrNode):
+		'''Check for instructions in the wrong section. We stop after
+		finding the first one, to avoid massive error lists.'''
+
+		#print "%s: section= %s" % (instrNode, instrNode._section)
+
+		if instrNode._section.isText():
+			# bss-only or data-only instructions in the text section
+			if isinstance(instrNode, ast.GenericInstruction):
+				if (instrNode.name in bss_only) or (instrNode.name in data_only):
+					wrongSectionWarning(instrNode)
+		elif instrNode._section.isData():
+			# non-data instructions in data section 
+			if isinstance(instrNode, ast.GenericInstruction):
+				if not instrNode.name in data_only:
+					wrongSectionWarning(instrNode)
+			else:
+				wrongSectionWarning(instrNode)
+		elif instrNode._section.isBSS():
+			# non-bss instructions in bss section
+			if isinstance(instrNode, ast.GenericInstruction):
+				if not instrNode.name in bss_only:
+					wrongSectionWarning(instrNode)
+			else:
+				wrongSectionWarning(instrNode)
+	
+	def countSectionDecls(instrNode):
+		'''This just counts the number of section delcarations in the file.'''
+		declared_sections[0] += 1	# hmm, this is a stupid trick
+
+	parse_result.reduced_tree.map(checkWrongSection, ast.Instruction)
+	parse_result.reduced_tree.map(countSectionDecls, ast.SectionDeclaration)
+
+	if declared_sections[0] == 0:
+		warn("No section declarations! Everything is implicitly in the text section.")
+
+allChecks = [saveOffset, branchDelaySlot, wrongSection]

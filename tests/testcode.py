@@ -189,15 +189,15 @@ class TestLines(TestCode):
 		self._runGood('.global	.global')
 
 	def testSkip(self):
-		self._runGood('.skip	4')
-		self._runGood('.skip	4, 1')
+		self._runGood('.section ".bss"', '.skip	4', '.section ".text"')
+		self._runGood('.section ".bss"', '.skip	4, 1', '.section ".text"')
 
 	def testFloats(self):
-		self._runGood('.single	0r4.20')
-		self._runGood('.double	0r8.40')
+		self._runGood('.section ".data"', '.single	0r4.20', '.section ".text"')
+		self._runGood('.section ".data"', '.double	0r8.40', '.section ".text"')
 
 	def testAsciz(self):
-		self._runGood('.asciz	"foo", "bar", "baz"')
+		self._runGood('.section ".data"', '.asciz	"foo", "bar", "baz"', '.section ".text"')
 
 	def testInvalid1(self):
 		self._runBad('# foo')
@@ -294,6 +294,26 @@ class TestLines(TestCode):
 	def testBranchAsDelayInstruction(self):
 		self._runWarn('bge	fooLabel', 'set 0, %l0')
 	
+
+	def testWrongSection(self):
+		# switching sections before ret/restore (part of the implicit wrapper)
+		self._runWarn('.section ".bss"')
+		self._runWarn('.section ".data"')
+
+		# any bss/data-only decl in text section
+		self._runWarn('.ascii "foo"')
+		self._runWarn('.asciz "foo"')
+		self._runWarn('.byte 1')
+		self._runWarn('.double 0r1.0')
+		self._runWarn('.half 1')
+		self._runWarn('.nword 1')
+		self._runWarn('.quad 0r1.0')
+		self._runWarn('.single 0r1.0')
+		self._runWarn('.uahalf 1')
+		self._runWarn('.uaword 1')
+		self._runWarn('.word 1')
+		self._runWarn('.xword 1')
+		self._runWarn('.skip 1')
 		
 	
 	# Stuff I don't use or run into regularly, that might otherwise break

@@ -368,6 +368,21 @@ class SectionDeclaration(NameContainer):
 			return "<%s:%s>" % (self.__class__.__name__, self.value)
 		else:
 			return "<%s:%s,%s>" % (self.__class__.__name__, self.value, self.attribute)
+	
+	# XXX: Need to make this a more canonical list, and support user-defined sections.
+	def isText(self):
+		'''Is this a text (instruction) section?'''
+		return self.value == ".text"
+
+	# XXX: Need to make this a more canonical list, and support user-defined sections.
+	def isData(self):
+		'''Is this a data (initialized data) section?'''
+		return self.value in [".data", ".data1", ".rodata", ".rodata1"]
+	
+	# XXX: Need to make this a more canonical list, and support user-defined sections.
+	def isBSS(self):
+		'''Is this a BSS (uninitialized data) section?'''
+		return self.value == ".bss"
 
 class PushSection(SectionDeclaration):
 	pass

@@ -4,10 +4,8 @@ Errors to catch:
 - no nop in delay slot
 - mention broken gcc behavior on labels without leading .L?
 - no label with same name as filename
-- check for correct .section (.data for .word, etc, .section for instrs)
 - check for .global
-- reserve sudo-op
-- A section is declared
+- reserve pseudo-op
 - Maximum value of a move
 - Check alignment...
   This works:
