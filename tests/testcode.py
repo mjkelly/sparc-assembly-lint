@@ -293,9 +293,9 @@ class TestLines(TestCode):
 
 	def testBranchAsDelayInstruction(self):
 		self._runWarn('bge	fooLabel', 'set 0, %l0')
-	
 
 	def testWrongSection(self):
+		'''Suspicious mnemonics for current section'''
 		# switching sections before ret/restore (part of the implicit wrapper)
 		self._runWarn('.section ".bss"')
 		self._runWarn('.section ".data"')
@@ -316,6 +316,7 @@ class TestLines(TestCode):
 		self._runWarn('.skip 1')
 	
 	def testMultipleSectionAttributes(self):
+		'''cc(1)-style .section'''
 		self._runGood('.section        ".text",#alloc,#execinstr')
 	
 	# Stuff I don't use or run into regularly, that might otherwise break
@@ -329,8 +330,17 @@ class TestLines(TestCode):
 		self._runGood('.file	"foo"')
 
 	def testBranchAliases(self):
+		'''Undocumented aliases beq, bgt, blt'''
+		self._runGood('beq	label')
 		self._runGood('bgt	label')
 		self._runGood('blt	label')
+	
+	def testRegisterWarnings(self):
+		'''Warnings on suspicious register names'''
+		self._runWarn("mov	%i6, %l0")
+		self._runWarn("mov	%i7, %l0")
+		self._runWarn("mov	%o6, %l0")
+		self._runWarn("mov	%o7, %l0")
 	
 class TestSingleErrorOnSyntax(TestCode):
 	def runSingleError(self, *lines):

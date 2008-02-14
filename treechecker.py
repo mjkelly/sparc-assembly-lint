@@ -70,7 +70,7 @@ def wrongSection(parse_result):
 		section = instrNode._section.getName()
 		if not reported_sections.has_key(section):
 			reported_sections[section] = True
-			warn("Line %d: Illegal instruction for %s section. (Only one error reported per section.)"
+			warn("Line %d: Suspicious instruction for %s section. (Only one error reported per section.)"
 				% (instrNode.getLine(), section))
 
 	def checkWrongSection(instrNode):
@@ -109,4 +109,28 @@ def wrongSection(parse_result):
 	if declared_sections[0] == 0:
 		warn("No section declarations! Everything is implicitly in the text section.")
 
-allChecks = [saveOffset, branchDelaySlot, wrongSection]
+def registers(parse_result):
+	'''Check register usage, particularly alternate ways of accessing named
+	registers.'''
+	warn = parse_result.warn
+
+	def checkRegs(reg):
+		name = reg.getName()
+		
+		if name.lower() == '%i6':
+			warn('Line %d: Register %s is better known as %%fp. Do not use as general-purpose register.'
+				% (reg.getLine(), name))
+		if name.lower() == '%i7':
+			warn('Line %d: Register %s is the return address - 8. Do not use as general-purpose register.'
+				% (reg.getLine(), name))
+		if name.lower() == '%o6':
+			warn('Line %d: Register %s is better known as %%sp. Do not use as general-purpose register.'
+				% (reg.getLine(), name))
+		if name.lower() == '%o7':
+			warn('Line %d: Register %s is the function call address. Do not use as general-purpose register.'
+				% (reg.getLine(), name))
+
+
+	parse_result.reduced_tree.map(checkRegs, ast.Reg)
+
+allChecks = [saveOffset, branchDelaySlot, wrongSection, registers]
