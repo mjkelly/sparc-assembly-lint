@@ -561,25 +561,34 @@ def p_call(p):
 
 def p_dotsection(p):
 	'''dotsection : DOTSECTION string
-	              | DOTSECTION string COMMA attribute'''
+	              | DOTSECTION string COMMA attributelist'''
 	name = p[2].getValue()
-	attribute = None
+	attributes = None
 	if len(p) == 5:
-		attribute = p[4]
-	p[0] = ast.SectionDeclaration(name, attribute, lineno=p.lineno(1))
+		attributes = p[4]
+	p[0] = ast.SectionDeclaration(name, attributes, lineno=p.lineno(1))
 
 def p_pushsection(p):
 	'''pushsection : PUSHSECTION string
-	              | PUSHSECTION string COMMA attribute'''
+	              | PUSHSECTION string COMMA attributelist'''
 	name = p[2]
-	attribute = None
+	attributes = None
 	if len(p) == 5:
-		attribute = p[4]
-	p[0] = ast.PushSection(name, attribute, lineno=p.lineno(1))
+		attributes = p[4]
+	p[0] = ast.PushSection(name, attributes, lineno=p.lineno(1))
 
 def p_attribute(p):
 	'''attribute : HASH ATTRNAME'''
-	p[0] = plist(p)
+	p[0] = p[2]
+
+def p_attributelist(p):
+	'''attributelist : attribute
+	                 | attributelist COMMA attribute'''
+        if len(p) == 2:
+		p[0] = [p[1]]
+	else:
+		p[0] = p[1] + [p[3]]
+	#p[0] = plist(p)
 
 def p_twoints(p):
 	'''twoints : TWOINTS intexpr COMMA intexpr'''

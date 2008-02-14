@@ -315,6 +315,9 @@ class TestLines(TestCode):
 		self._runWarn('.xword 1')
 		self._runWarn('.skip 1')
 	
+	def testMultipleSectionAttributes(self):
+		self._runGood('.section        ".text",#alloc,#execinstr')
+	
 	# Stuff I don't use or run into regularly, that might otherwise break
 	# without me noticing. NOT floating point stuff. That deserves its own
 	# category.
