@@ -11,6 +11,7 @@
 # -----------------------------------------------------------------
 
 import ast
+import symbols
 
 def saveOffset(parse_result):
 	warn = parse_result.warn
@@ -133,4 +134,17 @@ def registers(parse_result):
 
 	parse_result.reduced_tree.map(checkRegs, ast.Reg)
 
-allChecks = [saveOffset, branchDelaySlot, wrongSection, registers]
+def sections(parse_result):
+	'''Check .sections and .pushsections for suspicious section names.'''
+	warn = parse_result.warn
+
+	expectedSections = symbols.section_declarations.keys()
+
+	def checkSectionDecls(sec):
+		name = sec.getName()
+		if not name in expectedSections:
+			warn('Line %d: Suspicious section name "%s".' % (sec.getLine(), name))
+
+	parse_result.reduced_tree.map(checkSectionDecls, ast.SectionDeclaration)
+
+allChecks = [saveOffset, branchDelaySlot, wrongSection, registers, sections]
