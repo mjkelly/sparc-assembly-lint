@@ -147,4 +147,17 @@ def sections(parse_result):
 
 	parse_result.reduced_tree.map(checkSectionDecls, ast.SectionDeclaration)
 
-allChecks = [saveOffset, branchDelaySlot, wrongSection, registers, sections]
+def badchars(parse_result):
+	'''Check for misleading character constants.'''
+	warn = parse_result.warn
+
+	def checkBadChar(c):
+		# we correctly interpret '\0' = 0, but gcc doesn't, so we issue
+		# a warning when we get '\0'.
+		if c.getValue() == 0:
+			warn("Line %d: Character '\\0' is not nul, it is character '0'. If you want '\\0', use %%g0 or int 0."
+				% c.getLine())
+
+	parse_result.reduced_tree.map(checkBadChar, ast.Char)
+
+allChecks = [saveOffset, branchDelaySlot, wrongSection, registers, sections, badchars]

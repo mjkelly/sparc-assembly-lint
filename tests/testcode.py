@@ -341,6 +341,12 @@ class TestLines(TestCode):
 		self._runWarn("mov	%i7, %l0")
 		self._runWarn("mov	%o6, %l0")
 		self._runWarn("mov	%o7, %l0")
+
+	def testCharWarnings(self):
+		'''Warnings on suspicious char constants'''
+		self._runWarn("mov	'\\0', %l0")
+		self._runGood("mov	'0', %l0")
+		self._runGood("mov	0, %l0")
 	
 class TestSingleErrorOnSyntax(TestCode):
 	def runSingleError(self, *lines):
