@@ -1,0 +1,20 @@
+Errors to catch:
+- no save instruction
+- no ret/restore
+- no nop in delay slot
+- mention broken gcc behavior on labels without leading .L?
+- no label with same name as filename
+- check for .global
+- reserve pseudo-op
+- Maximum value of a move
+- Check alignment...
+  This works:
+	fmt: .asciz "x = %x\n"
+	.align 4
+	x: .word 5
+  This doesn't:
+	.align 4
+	fmt: .asciz "x = %x\n"
+	x: .word 5
+  .aligns are tricky!
+
